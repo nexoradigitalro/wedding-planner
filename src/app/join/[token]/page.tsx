@@ -38,13 +38,16 @@ export default async function JoinPage({ params }: Props) {
     .single()
 
   if (!existing) {
-    await admin.from('event_members').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin.from('event_members') as any).insert({
       event_id: invite.event_id,
       user_id: user.id,
       role: invite.role,
     })
-    await admin.from('invite_links').update({ uses: invite.uses + 1 }).eq('id', invite.id)
-    await admin.from('activity_log').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin.from('invite_links') as any).update({ uses: invite.uses + 1 }).eq('id', invite.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin.from('activity_log') as any).insert({
       event_id: invite.event_id,
       user_id: user.id,
       action: 'collaborator_invited',
