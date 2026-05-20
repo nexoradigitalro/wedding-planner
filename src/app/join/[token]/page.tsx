@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import type { InviteLink } from '@/types'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -17,11 +18,13 @@ export default async function JoinPage({ params }: Props) {
 
   const admin = createAdminClient()
 
-  const { data: invite } = await admin
+  const { data: inviteRaw } = await admin
     .from('invite_links')
     .select('*')
     .eq('token', token)
     .single()
+
+  const invite = inviteRaw as InviteLink | null
 
   if (!invite) redirect('/dashboard')
   if (invite.expires_at && new Date(invite.expires_at) < new Date()) redirect('/dashboard?error=link_expired')
