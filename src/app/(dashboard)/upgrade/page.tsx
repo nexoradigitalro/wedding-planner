@@ -1,25 +1,48 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { toast } from 'sonner'
 
 const plans = [
   {
     key: 'basic' as const,
     name: 'Basic',
-    price: '49',
-    desc: 'Pentru nunta perfectă',
-    features: ['1 eveniment', 'Invitați nelimitați', 'Mese nelimitate', 'Export PDF', '1 colaborator'],
+    price: '79',
+    desc: 'Tot ce ai nevoie pentru nunta ta',
+    features: [
+      '1 eveniment, până la 230 invitați',
+      'Mese nelimitate',
+      'Link RSVP public',
+      'Import & Export CSV',
+      'Statistici porții & mărturii',
+      'Plan mese vizual (drag & drop)',
+      '2 colaboratori (partener + naș)',
+      'Feed activitate în timp real',
+    ],
     highlighted: false,
   },
   {
     key: 'pro' as const,
     name: 'Pro',
-    price: '79',
-    desc: 'Colaborare completă',
-    features: ['Evenimente nelimitate', 'Invitați nelimitați', 'Colaboratori nelimitați', 'Feed activitate live', 'QR check-in', 'Export PDF & CSV'],
+    price: '109',
+    desc: 'Pentru organizatori și planners',
+    features: [
+      'Evenimente nelimitate',
+      'Invitați nelimitați',
+      'Mese nelimitate',
+      'Link RSVP public',
+      'Import & Export CSV',
+      'Statistici porții & mărturii',
+      'Plan mese vizual (drag & drop)',
+      'Export PDF plan mese',
+      'Colaboratori nelimitați',
+      'Feed activitate în timp real',
+      'Wedding Planner To-Do',
+      'Suport prioritar',
+    ],
     highlighted: true,
   },
 ]
@@ -27,16 +50,38 @@ const plans = [
 export default function UpgradePage() {
   const [loading, setLoading] = useState<string | null>(null)
 
+  useEffect(() => {
+    const autostart = new URLSearchParams(window.location.search).get('autostart')
+    if (autostart === 'basic' || autostart === 'pro') {
+      window.history.replaceState({}, '', '/upgrade')
+      handleUpgrade(autostart)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleUpgrade(plan: 'basic' | 'pro') {
     setLoading(plan)
-    const res = await fetch('/api/upgrade', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan }),
-    })
-    const { url } = await res.json()
-    if (url) window.location.href = url
-    setLoading(null)
+    try {
+      const res = await fetch('/api/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      })
+      if (!res.ok) {
+        toast.error('Eroare la procesarea plății. Încearcă din nou.')
+        setLoading(null)
+        return
+      }
+      const { url } = await res.json()
+      if (url) {
+        window.location.replace(url)
+      } else {
+        toast.error('Nu s-a putut genera linkul de plată.')
+        setLoading(null)
+      }
+    } catch {
+      toast.error('Eroare de rețea. Verifică conexiunea și încearcă din nou.')
+      setLoading(null)
+    }
   }
 
   return (
@@ -75,7 +120,7 @@ export default function UpgradePage() {
               <Button
                 className={`w-full text-base py-5 ${p.highlighted ? 'bg-rose-600 hover:bg-rose-700' : ''}`}
                 variant={p.highlighted ? 'default' : 'outline'}
-                disabled={loading !== null}
+                disabled={loading === p.key}
                 onClick={() => handleUpgrade(p.key)}
               >
                 {loading === p.key ? 'Se redirectează...' : `Alege ${p.name}`}
@@ -84,6 +129,12 @@ export default function UpgradePage() {
           </Card>
         ))}
       </div>
+
+      {loading && (
+        <p className="text-center text-sm text-muted-foreground animate-pulse">
+          Se deschide pagina de plată Stripe...
+        </p>
+      )}
 
       <p className="text-center text-xs text-muted-foreground">
         Plată securizată prin Stripe · Revolut Pay acceptat · Nu stocăm datele cardului

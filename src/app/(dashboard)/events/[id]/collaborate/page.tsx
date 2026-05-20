@@ -25,7 +25,7 @@ export default async function CollaboratePage({ params }: Props) {
 
   const { data: activity } = await supabase
     .from('activity_log')
-    .select('*, profile:profiles(full_name, avatar_url)')
+    .select('*, profile:profiles(full_name, avatar_url, email)')
     .eq('event_id', id)
     .order('created_at', { ascending: false })
     .limit(50)

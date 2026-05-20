@@ -43,6 +43,7 @@ export default async function GuestsPage({ params }: Props) {
   return (
     <GuestList
       eventId={id}
+      userId={user.id}
       initialGuests={guests ?? []}
       tables={tables ?? []}
       canEdit={canEdit}

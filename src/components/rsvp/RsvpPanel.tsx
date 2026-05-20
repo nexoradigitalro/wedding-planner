@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { toast } from 'sonner'
 import type { RsvpResponse } from '@/types'
 
 interface Props {
@@ -15,8 +16,22 @@ interface Props {
 export default function RsvpPanel({ eventId, responses: initial }: Props) {
   const [responses, setResponses] = useState(initial)
   const [copied, setCopied] = useState(false)
+  const [imported, setImported] = useState<Set<string>>(new Set())
+  const [importing, setImporting] = useState<string | null>(null)
+  const [rsvpUrl, setRsvpUrl] = useState('')
   const supabase = createClient()
-  const rsvpUrl = typeof window !== 'undefined' ? `${window.location.origin}/rsvp/${eventId}` : ''
+
+  useEffect(() => {
+    setRsvpUrl(`${window.location.origin}/rsvp/${eventId}`)
+  }, [eventId])
+
+  // Restore imported state from localStorage so it persists across navigations
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`rsvp_imported_${eventId}`)
+      if (stored) setImported(new Set(JSON.parse(stored)))
+    } catch {}
+  }, [eventId])
 
   useEffect(() => {
     const channel = supabase
@@ -24,9 +39,52 @@ export default function RsvpPanel({ eventId, responses: initial }: Props) {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rsvp_responses', filter: `event_id=eq.${eventId}` },
         (payload) => setResponses((prev) => [payload.new as RsvpResponse, ...prev])
       )
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'rsvp_responses', filter: `event_id=eq.${eventId}` },
+        (payload) => setResponses((prev) => prev.filter((r) => r.id !== payload.old.id))
+      )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [eventId, supabase])
+
+  async function handleAddGuest(r: RsvpResponse) {
+    setImporting(r.id)
+    const dietary = [r.menu_choice, r.allergies].filter(Boolean).join(' · ') || null
+
+    const { error } = await supabase.from('guests').insert({
+      event_id: eventId,
+      name: r.guest_name,
+      rsvp_status: r.attending ? 'confirmed' : 'declined',
+      has_plus_one: !!r.companion_name,
+      plus_one_name: r.companion_name || null,
+      plus_one_confirmed: !!r.companion_name,
+      dietary,
+      notes: r.message || null,
+      category: 'friends',
+    })
+
+    setImporting(null)
+    if (error) {
+      toast.error('Eroare la adăugare')
+    } else {
+      const next = new Set([...imported, r.id])
+      setImported(next)
+      try { localStorage.setItem(`rsvp_imported_${eventId}`, JSON.stringify([...next])) } catch {}
+      toast.success(r.companion_name
+        ? `${r.guest_name} +1 ${r.companion_name} adăugați`
+        : `${r.guest_name} adăugat la invitați`)
+    }
+  }
+
+  async function handleDeleteResponse(r: RsvpResponse) {
+    setResponses((prev) => prev.filter((x) => x.id !== r.id))
+    const { error } = await supabase.from('rsvp_responses').delete().eq('id', r.id)
+    if (error) {
+      setResponses((prev) => [r, ...prev])
+      toast.error('Eroare la ștergere')
+    } else {
+      toast.success(`Răspuns ${r.guest_name} șters`)
+    }
+  }
 
   function copy() {
     navigator.clipboard.writeText(rsvpUrl)
@@ -89,13 +147,17 @@ export default function RsvpPanel({ eventId, responses: initial }: Props) {
                 <tr>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Nume</th>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">+1</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Însoțitor</th>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Meniu / Alergii</th>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden lg:table-cell">Mesaj</th>
+                  <th className="px-4 py-2.5" />
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {responses.map((r) => (
+                {responses.map((r) => {
+                  const isImported = imported.has(r.id)
+                  const isImporting = importing === r.id
+                  return (
                   <tr key={r.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium">{r.guest_name}</td>
                     <td className="px-4 py-3">
@@ -104,7 +166,7 @@ export default function RsvpPanel({ eventId, responses: initial }: Props) {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">
-                      {r.plus_one_count > 0 ? `+${r.plus_one_count}` : '—'}
+                      {r.companion_name ?? '—'}
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">
                       {[r.menu_choice, r.allergies].filter(Boolean).join(' · ') || '—'}
@@ -112,8 +174,35 @@ export default function RsvpPanel({ eventId, responses: initial }: Props) {
                     <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs max-w-xs truncate">
                       {r.message || '—'}
                     </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        {isImported ? (
+                          <span className="text-xs text-green-600 font-medium">✓ Adăugat</span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs border-rose-200 text-rose-600 hover:bg-rose-50 h-7 px-2.5"
+                            onClick={() => handleAddGuest(r)}
+                            disabled={isImporting}
+                          >
+                            {isImporting ? '...' : '+ Invitat'}
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteResponse(r)}
+                          className="text-gray-300 hover:text-red-500 h-7 w-7 p-0"
+                          title="Șterge răspuns"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

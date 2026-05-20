@@ -53,10 +53,13 @@ export interface Guest {
   has_plus_one: boolean
   plus_one_name: string | null
   plus_one_confirmed: boolean
+  plus_one_portion: 'full' | 'half' | 'none'
   dietary: string | null
   notes: string | null
   table_id: string | null
   seat_number: number | null
+  attended: boolean | null
+  gift_amount: number | null
   created_at: string
   updated_at: string
   table?: Table
@@ -69,7 +72,7 @@ export interface Table {
   capacity: number
   position_x: number
   position_y: number
-  shape: 'round' | 'rectangular'
+  shape: 'round' | 'rectangular' | 'head'
   notes: string | null
   created_at: string
   guests?: Guest[]
@@ -90,6 +93,7 @@ export interface RsvpResponse {
   event_id: string
   token: string
   guest_name: string
+  companion_name: string | null
   attending: boolean
   plus_one_count: number
   menu_choice: string | null
@@ -104,6 +108,18 @@ export interface QrCode {
   guest_id: string | null
   type: 'invitation' | 'checkin'
   token: string
+  created_at: string
+}
+
+export interface VenueElement {
+  id: string
+  event_id: string
+  type: string
+  label: string | null
+  position_x: number
+  position_y: number
+  width: number
+  height: number
   created_at: string
 }
 

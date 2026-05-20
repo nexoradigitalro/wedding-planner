@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -11,29 +13,52 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function PublicRsvpPage() {
   const { token } = useParams<{ token: string }>()
-  const [name, setName] = useState('')
+
+  // Primary guest
+  const [prenume, setPrenume] = useState('')
+  const [nume, setNume] = useState('')
+
+  // Attendance
   const [attending, setAttending] = useState<boolean | null>(null)
-  const [plusOne, setPlusOne] = useState('0')
+
+  // Companion
+  const [compPrenume, setCompPrenume] = useState('')
+  const [compNume, setCompNume] = useState('')
+
+  // Details
   const [menu, setMenu] = useState('')
   const [allergies, setAllergies] = useState('')
   const [message, setMessage] = useState('')
+
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
+
+  const hasCompanion = compPrenume.trim().length > 0 || compNume.trim().length > 0
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (attending === null) return
     setLoading(true)
-    await supabase.from('rsvp_responses').insert({
+    setError(null)
+    const guestName = [prenume.trim(), nume.trim()].filter(Boolean).join(' ')
+    const companionName = [compPrenume.trim(), compNume.trim()].filter(Boolean).join(' ') || null
+    const { error: insertError } = await supabase.from('rsvp_responses').insert({
       event_id: token,
-      guest_name: name,
+      guest_name: guestName,
+      companion_name: companionName,
       attending,
-      plus_one_count: parseInt(plusOne),
+      plus_one_count: companionName ? 1 : 0,
       menu_choice: menu || null,
       allergies: allergies || null,
       message: message || null,
     })
+    if (insertError) {
+      setError('A apărut o eroare. Te rugăm să încerci din nou.')
+      setLoading(false)
+      return
+    }
     setSubmitted(true)
     setLoading(false)
   }
@@ -67,12 +92,31 @@ export default function PublicRsvpPage() {
           <p className="text-muted-foreground text-sm">Te rugăm să completezi formularul de mai jos</p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <Label>Numele tău *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ion și Maria Popescu" required />
+          <form onSubmit={handleSubmit} className="space-y-5">
+
+            {/* Primary guest name */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Prenume *</Label>
+                <Input
+                  value={prenume}
+                  onChange={(e) => setPrenume(e.target.value)}
+                  placeholder="Andreea"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Nume *</Label>
+                <Input
+                  value={nume}
+                  onChange={(e) => setNume(e.target.value)}
+                  placeholder="Irimie"
+                  required
+                />
+              </div>
             </div>
 
+            {/* Attendance choice */}
             <div className="space-y-2">
               <Label>Participi la nuntă? *</Label>
               <div className="grid grid-cols-2 gap-3">
@@ -95,32 +139,62 @@ export default function PublicRsvpPage() {
               </div>
             </div>
 
+            {/* Companion section — only if attending */}
             {attending && (
               <>
-                <div className="space-y-1">
-                  <Label>Număr însoțitori (inclusiv copii)</Label>
-                  <Input type="number" min="0" max="10" value={plusOne} onChange={(e) => setPlusOne(e.target.value)} />
+                <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-4 space-y-3">
+                  <p className="text-sm font-medium text-rose-700">Însoțitor (opțional)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-gray-600">Prenume însoțitor</Label>
+                      <Input
+                        value={compPrenume}
+                        onChange={(e) => setCompPrenume(e.target.value)}
+                        placeholder="Cornel"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-gray-600">Nume însoțitor</Label>
+                      <Input
+                        value={compNume}
+                        onChange={(e) => setCompNume(e.target.value)}
+                        placeholder="Irimie"
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                  {hasCompanion && (
+                    <p className="text-xs text-rose-600">
+                      ✓ Veniți în 2: <strong>{[prenume, nume].filter(Boolean).join(' ')}</strong> și <strong>{[compPrenume, compNume].filter(Boolean).join(' ')}</strong>
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-1">
+
+                <div className="space-y-1.5">
                   <Label>Preferință meniu</Label>
                   <Input value={menu} onChange={(e) => setMenu(e.target.value)} placeholder="Normal / Vegetarian / Vegan / Copil" />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <Label>Alergii sau restricții alimentare</Label>
                   <Input value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Gluten, lactate, nuci..." />
                 </div>
               </>
             )}
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <Label>Mesaj pentru miri (opțional)</Label>
               <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Un gând frumos pentru ziua cea mare..." rows={3} />
             </div>
 
+            {error && (
+              <p className="text-sm text-red-600 text-center bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            )}
+
             <Button
               type="submit"
               className="w-full bg-rose-600 hover:bg-rose-700"
-              disabled={loading || !name || attending === null}
+              disabled={loading || !prenume.trim() || attending === null}
             >
               {loading ? 'Se trimite...' : 'Trimite confirmarea'}
             </Button>

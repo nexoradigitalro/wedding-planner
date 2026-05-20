@@ -26,26 +26,29 @@ export interface PlanLimits {
   pdfExport: boolean
   qrCheckin: boolean
   activityFeed: boolean
+  giftCalculator: boolean
 }
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
   free: {
-    maxGuests: 75,
+    maxGuests: 50,
     maxTables: 10,
     maxEvents: 1,
     maxCollaborators: 0,
     pdfExport: false,
     qrCheckin: false,
     activityFeed: false,
+    giftCalculator: false,
   },
   basic: {
-    maxGuests: null,
+    maxGuests: 230,
     maxTables: null,
     maxEvents: 1,
-    maxCollaborators: 1,
-    pdfExport: true,
+    maxCollaborators: 0,
+    pdfExport: false,
     qrCheckin: false,
-    activityFeed: false,
+    activityFeed: true,
+    giftCalculator: false,
   },
   pro: {
     maxGuests: null,
@@ -55,5 +58,6 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     pdfExport: true,
     qrCheckin: true,
     activityFeed: true,
+    giftCalculator: true,
   },
 }

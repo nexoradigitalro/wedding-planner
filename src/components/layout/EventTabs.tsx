@@ -7,30 +7,33 @@ import { cn } from '@/lib/utils'
 interface Props {
   eventId: string
   role: string
+  planTier: string
 }
 
-export default function EventTabs({ eventId, role }: Props) {
+export default function EventTabs({ eventId, role, planTier }: Props) {
   const pathname = usePathname()
 
   const tabs = [
-    { label: '👥 Invitați', href: `/events/${eventId}/guests` },
-    { label: '🪑 Mese', href: `/events/${eventId}/tables` },
-    { label: '📩 RSVP', href: `/events/${eventId}/rsvp` },
-    { label: '⚡ Colaborare', href: `/events/${eventId}/collaborate` },
-    ...(role === 'owner' ? [{ label: '⚙ Setări', href: `/events/${eventId}/settings` }] : []),
+    { label: 'Invitați', href: `/events/${eventId}/guests` },
+    { label: 'Mese', href: `/events/${eventId}/tables` },
+    { label: 'RSVP', href: `/events/${eventId}/rsvp` },
+    { label: 'Colaborare', href: `/events/${eventId}/collaborate` },
+    ...(planTier === 'pro' ? [{ label: 'Wedding Planner To-Do', href: `/events/${eventId}/todos` }] : []),
+    { label: '🎁 Cinste', href: `/events/${eventId}/cinste` },
+    ...(role === 'owner' ? [{ label: 'Setări', href: `/events/${eventId}/settings` }] : []),
   ]
 
   return (
-    <nav className="flex gap-1 border-b overflow-x-auto pb-0 -mb-px">
+    <nav className="flex gap-0 border-b border-stone-200 overflow-x-auto scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0">
       {tabs.map((tab) => (
         <Link
           key={tab.href}
           href={tab.href}
           className={cn(
-            'shrink-0 px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
+            'shrink-0 px-4 sm:px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
             pathname === tab.href
               ? 'border-rose-600 text-rose-600'
-              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+              : 'border-transparent text-gray-400 hover:text-gray-700 hover:border-stone-300'
           )}
         >
           {tab.label}
