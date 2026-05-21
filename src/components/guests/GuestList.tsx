@@ -322,7 +322,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       doc.setTextColor(170, 130, 90)
       doc.text(
         pdfSafe(eventDate ? new Date(eventDate).toLocaleDateString('ro-RO') : new Date().toLocaleDateString('ro-RO')),
-        pageW / 2, pageH - 8, { align: 'center' }
+        pageW / 2, pageH - 11, { align: 'center' }
       )
     }
 
