@@ -449,7 +449,7 @@ export default async function LandingPage() {
               {
                 name: 'Pro', price: '109', period: 'o singură dată',
                 desc: 'Pentru organizatori & planners',
-                features: ['Evenimente nelimitate', 'Invitați nelimitați', 'Mese nelimitate', 'Link RSVP public', 'Import & Export CSV', 'Statistici porții & mărturii', 'Plan mese vizual', 'Export PDF plan mese', 'Colaboratori nelimitați', 'Feed activitate live', 'Wedding Planner To-Do', '🎁 Calculator Cinste', 'Suport prioritar'],
+                features: ['Evenimente nelimitate', 'Invitați nelimitați', 'Mese nelimitate', 'Link RSVP public', 'Import & Export CSV', 'Statistici porții & mărturii', 'Plan mese vizual', 'Export PDF plan mese', 'Colaboratori nelimitați', 'Feed activitate live', 'Wedding Planner To-Do', '🎁 Calculator Cinste', '💰 Buget & Costuri', 'Suport prioritar'],
                 cta: 'Alege Pro', href: '/register?plan=pro', highlight: true,
               },
             ].map((p) => (
