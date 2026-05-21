@@ -285,6 +285,122 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     toast.success(pdfSafe('Lista de intrare exportata!'))
   }
 
+  async function handleBeautifulListExport() {
+    const { default: jsPDF } = await import('jspdf')
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageW = 210, pageH = 297
+    const mg = 11, colGap = 5
+    const colW = (pageW - 2 * mg - 2 * colGap) / 3
+    const contentTop = 35, contentBottom = pageH - 13
+    const letterH = 7.5, nameLineH = 4, groupGap = 3, maxLineW = colW - 3
+
+    function bg() {
+      doc.setFillColor(254, 252, 248)
+      doc.rect(0, 0, pageW, pageH, 'F')
+    }
+    function border() {
+      doc.setDrawColor(175, 138, 95)
+      doc.setLineWidth(0.7)
+      doc.rect(6, 6, pageW - 12, pageH - 12)
+      doc.setLineWidth(0.3)
+      doc.rect(8.5, 8.5, pageW - 17, pageH - 17)
+    }
+    function colSep() {
+      doc.setDrawColor(210, 180, 140)
+      doc.setLineWidth(0.25)
+      for (let c = 1; c <= 2; c++) {
+        const sx = mg + c * (colW + colGap) - colGap / 2
+        doc.line(sx, contentTop - 2, sx, contentBottom + 2)
+      }
+    }
+    function footer() {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.5)
+      doc.setTextColor(170, 130, 90)
+      doc.text(
+        pdfSafe(`${guests.length} invitatii · ${new Date().toLocaleDateString('ro-RO')} · Nunta Mea`),
+        pageW / 2, pageH - 8, { align: 'center' }
+      )
+    }
+
+    // First page
+    bg(); border()
+    const titleY = 21
+    doc.setDrawColor(175, 138, 95)
+    doc.setLineWidth(0.4)
+    doc.line(mg + 6, titleY - 7, pageW / 2 - 22, titleY - 3)
+    doc.line(pageW / 2 + 22, titleY - 3, pageW - mg - 6, titleY - 7)
+    doc.setFont('times', 'italic')
+    doc.setFontSize(21)
+    doc.setTextColor(85, 50, 25)
+    doc.text(pdfSafe(eventName || 'Plan de asezare'), pageW / 2, titleY, { align: 'center' })
+    doc.setDrawColor(175, 138, 95)
+    doc.setLineWidth(0.5)
+    doc.line(mg + 5, titleY + 5, pageW - mg - 5, titleY + 5)
+    doc.setLineWidth(0.2)
+    doc.line(mg + 5, titleY + 7, pageW - mg - 5, titleY + 7)
+    colSep()
+
+    // Build alphabetical groups
+    const sorted = [...guests].sort((a, b) => a.name.localeCompare(b.name))
+    const groups: { letter: string; entries: string[] }[] = []
+    for (const g of sorted) {
+      const letter = (g.name[0] ?? '?').toUpperCase()
+      const tbl = tables.find(t => t.id === g.table_id)?.name ?? 'Neasignat'
+      const comp = g.has_plus_one ? ` Si ${g.plus_one_name || '+1'}` : ''
+      const entry = pdfSafe(`${g.name}${comp} - ${tbl}`)
+      let grp = groups.find(gr => gr.letter === letter)
+      if (!grp) { grp = { letter, entries: [] }; groups.push(grp) }
+      grp.entries.push(entry)
+    }
+
+    let ci = 0, y = contentTop
+    function colX() { return mg + ci * (colW + colGap) }
+    function nextCol() {
+      ci++
+      if (ci > 2) {
+        footer()
+        doc.addPage()
+        bg(); border(); colSep()
+        ci = 0
+      }
+      y = contentTop
+    }
+
+    for (const group of groups) {
+      if (y + letterH + nameLineH > contentBottom) nextCol()
+
+      // Letter header
+      doc.setFont('times', 'bolditalic')
+      doc.setFontSize(11)
+      doc.setTextColor(155, 95, 45)
+      doc.text(group.letter, colX() + colW / 2, y + 5, { align: 'center' })
+      doc.setDrawColor(195, 158, 105)
+      doc.setLineWidth(0.25)
+      doc.line(colX() + colW / 2 - 9, y + 6.5, colX() + colW / 2 + 9, y + 6.5)
+      y += letterH
+
+      // Names
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(50, 35, 20)
+      for (const entry of group.entries) {
+        const lines = doc.splitTextToSize(entry, maxLineW)
+        if (y + lines.length * nameLineH > contentBottom) nextCol()
+        for (const line of lines as string[]) {
+          doc.text(line, colX() + colW / 2, y, { align: 'center' })
+          y += nameLineH
+        }
+      }
+      y += groupGap
+    }
+
+    footer()
+    doc.save(pdfSafe(`plan-asezare-${(eventName || 'nunta').toLowerCase().replace(/\s+/g, '-')}.pdf`))
+    toast.success(pdfSafe('Plan de asezare exportat!'))
+  }
+
   function handleCsvImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -765,30 +881,37 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       <Dialog open={entranceOpen} onOpenChange={setEntranceOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Listă invitați la intrare</DialogTitle>
+            <DialogTitle>Exportă lista invitaților</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground -mt-1">
-            Se exportă un PDF cu căsuțe de bifat — ideal pentru verificarea la intrare.
-          </p>
-          <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="space-y-2 mt-1">
+            <button
+              onClick={() => { setEntranceOpen(false); handleBeautifulListExport() }}
+              className="w-full flex items-start gap-3 p-3 rounded-xl border-2 border-rose-200 bg-rose-50 hover:border-rose-400 transition-colors text-left"
+            >
+              <span className="text-2xl shrink-0">🎨</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Panou intrare (elegant)</p>
+                <p className="text-xs text-gray-500 mt-0.5">3 coloane alfabetice, design elegant — se afișează la intrarea în sală</p>
+              </div>
+            </button>
             <button
               onClick={() => { setEntranceOpen(false); handleEntranceListExport('alpha') }}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-stone-200 hover:border-rose-300 hover:bg-rose-50 transition-colors text-left"
+              className="w-full flex items-start gap-3 p-3 rounded-xl border-2 border-stone-200 hover:border-stone-300 transition-colors text-left"
             >
-              <span className="text-2xl">🔤</span>
+              <span className="text-2xl shrink-0">✅</span>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Alfabetic</p>
-                <p className="text-xs text-gray-400 mt-0.5">Toți invitații A–Z, cu masa alocată</p>
+                <p className="text-sm font-semibold text-gray-800">Listă prezență A–Z (cu bifat)</p>
+                <p className="text-xs text-gray-500 mt-0.5">Tabel cu căsuțe de bifat — pentru coordonatorul de la ușă</p>
               </div>
             </button>
             <button
               onClick={() => { setEntranceOpen(false); handleEntranceListExport('table') }}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-stone-200 hover:border-rose-300 hover:bg-rose-50 transition-colors text-left"
+              className="w-full flex items-start gap-3 p-3 rounded-xl border-2 border-stone-200 hover:border-stone-300 transition-colors text-left"
             >
-              <span className="text-2xl">🪑</span>
+              <span className="text-2xl shrink-0">🪑</span>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Pe mese</p>
-                <p className="text-xs text-gray-400 mt-0.5">Grupat per masă — util organizatorului</p>
+                <p className="text-sm font-semibold text-gray-800">Listă prezență pe mese (cu bifat)</p>
+                <p className="text-xs text-gray-500 mt-0.5">Tabel grupat per masă — util organizatorului de sală</p>
               </div>
             </button>
           </div>
