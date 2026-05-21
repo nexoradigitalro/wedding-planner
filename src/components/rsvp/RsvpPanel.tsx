@@ -92,9 +92,15 @@ export default function RsvpPanel({ eventId, responses: initial }: Props) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const [filterAttending, setFilterAttending] = useState<'all' | 'yes' | 'no'>('all')
+
   const attending = responses.filter((r) => r.attending)
   const declined = responses.filter((r) => !r.attending)
   const totalGuests = attending.reduce((sum, r) => sum + 1 + r.plus_one_count, 0)
+
+  const visibleResponses = filterAttending === 'all' ? responses
+    : filterAttending === 'yes' ? attending
+    : declined
 
   return (
     <div className="space-y-6">
@@ -132,6 +138,31 @@ export default function RsvpPanel({ eventId, responses: initial }: Props) {
         ))}
       </div>
 
+      {/* Filter pills */}
+      {responses.length > 0 && (
+        <div className="flex gap-2">
+          {([
+            { key: 'all', label: `Toți (${responses.length})` },
+            { key: 'yes', label: `Confirmați (${attending.length})` },
+            { key: 'no',  label: `Refuzați (${declined.length})` },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilterAttending(key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                filterAttending === key
+                  ? key === 'yes' ? 'bg-green-600 text-white border-green-600'
+                  : key === 'no'  ? 'bg-red-500 text-white border-red-500'
+                  : 'bg-gray-800 text-white border-gray-800'
+                  : 'bg-white text-gray-500 border-stone-200 hover:border-stone-400'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Responses list */}
       <div className="rounded-lg border overflow-hidden bg-white">
         {responses.length === 0 ? (
@@ -154,7 +185,7 @@ export default function RsvpPanel({ eventId, responses: initial }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {responses.map((r) => {
+                {visibleResponses.map((r) => {
                   const isImported = imported.has(r.id)
                   const isImporting = importing === r.id
                   return (

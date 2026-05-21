@@ -97,7 +97,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       .channel(`guests:${eventId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'guests', filter: `event_id=eq.${eventId}` },
         (payload) => {
-          if (payload.eventType === 'INSERT') setGuests((prev) => prev.some((g) => g.id === (payload.new as Guest).id) ? prev : [...prev, payload.new as Guest].sort((a, b) => a.name.localeCompare(b.name)))
+          if (payload.eventType === 'INSERT') setGuests((prev) => prev.some((g) => g.id === (payload.new as Guest).id) ? prev : [payload.new as Guest, ...prev])
           if (payload.eventType === 'UPDATE') setGuests((prev) => prev.map((g) => g.id === (payload.new as Guest).id ? payload.new as Guest : g))
           if (payload.eventType === 'DELETE') setGuests((prev) => prev.filter((g) => g.id !== payload.old.id))
         }
@@ -168,7 +168,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     } else {
       const { data: newGuest, error } = await supabase.from('guests').insert({ ...payload, event_id: eventId }).select('*, table:tables(id, name)').single()
       if (error) { toast.error('Eroare: ' + error.message); setLoading(false); return }
-      if (newGuest) setGuests((prev) => [...prev, newGuest as Guest].sort((a, b) => a.name.localeCompare(b.name)))
+      if (newGuest) setGuests((prev) => [newGuest as Guest, ...prev])
       await supabase.from('activity_log').insert({ event_id: eventId, user_id: userId, action: 'guest_added', payload: { guest_name: form.name } })
       toast.success('Invitat adăugat')
     }
