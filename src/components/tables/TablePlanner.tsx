@@ -130,45 +130,67 @@ export default function TablePlanner({
       .replace(/[șş]/g, 's').replace(/[ȘŞ]/g, 'S')
       .replace(/[țţ]/g, 't').replace(/[ȚŢ]/g, 'T')
 
+    function hexRgb(hex: string): [number, number, number] {
+      return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]
+    }
+
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageW = 297, pageH = 210
     const mg = 10
     const headerH = 10
-    const footerH = 10
+    const footerH = 12
     const areaX = mg, areaY = mg + headerH
     const areaW = pageW - 2 * mg
     const areaH = pageH - mg - headerH - footerH
 
-    const scale = Math.min(areaW / CANVAS_W, areaH / CANVAS_H)
-    const floorW = CANVAS_W * scale
-    const floorH = CANVAS_H * scale
+    // Compute bounding box from actual canvas positions
+    const pts: { x: number; y: number }[] = [
+      ...tables.map(t => positions[t.id] ?? { x: 80, y: 80 }),
+      ...venueElements.map(el => ({ x: el.position_x, y: el.position_y })),
+      ...venueElements.map(el => ({ x: el.position_x + el.width, y: el.position_y + el.height })),
+    ]
+    if (pts.length === 0) pts.push({ x: 0, y: 0 }, { x: CANVAS_W, y: CANVAS_H })
+
+    const pad = 100
+    const bMinX = Math.min(...pts.map(p => p.x)) - pad
+    const bMinY = Math.min(...pts.map(p => p.y)) - pad
+    const bMaxX = Math.max(...pts.map(p => p.x)) + pad
+    const bMaxY = Math.max(...pts.map(p => p.y)) + pad
+
+    // Reserve 20mm vertical headroom for below-table labels
+    const scale = Math.min(areaW / (bMaxX - bMinX), (areaH - 20) / (bMaxY - bMinY))
+    const floorW = (bMaxX - bMinX) * scale
+    const floorH = (bMaxY - bMinY) * scale
+    const offX = areaX + (areaW - floorW) / 2
+    const offY = areaY + ((areaH - 20) - floorH) / 2
+
+    function cx(x: number) { return offX + (x - bMinX) * scale }
+    function cy(y: number) { return offY + (y - bMinY) * scale }
 
     // Floor background
     doc.setFillColor(242, 228, 204)
-    doc.rect(areaX, areaY, floorW, floorH, 'F')
+    doc.rect(offX, offY, floorW, floorH, 'F')
 
-    // Hall walls outline
-    const wallPad = 48 * scale
+    // Hall walls
     doc.setDrawColor(160, 110, 55)
     doc.setLineWidth(0.6)
-    doc.rect(areaX + wallPad, areaY + wallPad, floorW - 2 * wallPad, floorH - 2 * wallPad)
-
-    function cx(x: number) { return areaX + x * scale }
-    function cy(y: number) { return areaY + y * scale }
+    doc.rect(offX + 3, offY + 3, floorW - 6, floorH - 6)
 
     // Venue elements
     for (const el of venueElements) {
-      const def = ELEMENT_DEFS[el.type] ?? { label: el.label ?? el.type, emoji: '📍' }
+      const def = ELEMENT_DEFS[el.type] ?? { label: el.label ?? el.type, bg: '#f5f5dc', border: '#b4a064' }
       const x = cx(el.position_x), y = cy(el.position_y)
       const w = el.width * scale, h = el.height * scale
-      doc.setFillColor(245, 245, 220)
-      doc.setDrawColor(180, 160, 100)
-      doc.setLineWidth(0.3)
-      doc.roundedRect(x, y, w, h, 1, 1, 'FD')
+      const [br, bg2, bb] = hexRgb((def as typeof ELEMENT_DEFS[string]).bg)
+      const [dr, dg, db] = hexRgb((def as typeof ELEMENT_DEFS[string]).border)
+      doc.setFillColor(br, bg2, bb)
+      doc.setDrawColor(dr, dg, db)
+      doc.setLineWidth(0.4)
+      doc.roundedRect(x, y, Math.max(w, 8), Math.max(h, 6), 1.5, 1.5, 'FD')
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(5.5)
       doc.setTextColor(60, 50, 20)
-      doc.text(ps(def.label), x + w / 2, y + h / 2 + 1.5, { align: 'center' })
+      doc.text(ps((def as typeof ELEMENT_DEFS[string]).label), x + Math.max(w, 8) / 2, y + Math.max(h, 6) / 2 + 1.5, { align: 'center' })
     }
 
     // Tables
@@ -178,11 +200,11 @@ export default function TablePlanner({
       const fullP = table.guests.length + table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'full').length
       const halfP = table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'half').length
       const noneP = table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'none').length
-      const portionParts = [
-        fullP > 0 ? `${fullP} intregi` : null,
-        halfP > 0 ? `${halfP} copii` : null,
-        noneP > 0 ? `${noneP} fara` : null,
-      ].filter(Boolean)
+      const portionStr = [
+        fullP > 0 ? `${fullP}i` : null,
+        halfP > 0 ? `${halfP}c` : null,
+        noneP > 0 ? `${noneP}f` : null,
+      ].filter(Boolean).join(' · ')
 
       if (table.shape === 'round') {
         const r = 13
@@ -191,18 +213,16 @@ export default function TablePlanner({
         doc.setDrawColor(120, 80, 40)
         doc.setLineWidth(0.5)
         doc.circle(tx, ty, r, 'FD')
-        // Table name inside
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(6)
         doc.setTextColor(40, 20, 5)
-        const nameLines = doc.splitTextToSize(ps(table.name), r * 1.5) as string[]
-        nameLines.forEach((ln, i) => doc.text(ln, tx, ty - 1.5 + (i - (nameLines.length - 1) / 2) * 3.2, { align: 'center' }))
-        // Occupancy + portions below
+        const nameLines = doc.splitTextToSize(ps(table.name), r * 1.6) as string[]
+        nameLines.forEach((ln, i) => doc.text(ln, tx, ty - 1 + (i - (nameLines.length - 1) / 2) * 3.2, { align: 'center' }))
         doc.setFont('helvetica', 'normal')
-        doc.setFontSize(5)
+        doc.setFontSize(4.8)
         doc.setTextColor(80, 60, 40)
-        doc.text(`${occ}/${table.capacity} locuri`, tx, ty + r + 3.5, { align: 'center' })
-        portionParts.forEach((p, i) => doc.text(ps(p!), tx, ty + r + 6.5 + i * 3.2, { align: 'center' }))
+        doc.text(`${occ}/${table.capacity}`, tx, ty + r + 3.5, { align: 'center' })
+        if (portionStr) doc.text(ps(portionStr), tx, ty + r + 7, { align: 'center' })
 
       } else if (table.shape === 'rectangular') {
         const w = 28, h = 18
@@ -217,10 +237,10 @@ export default function TablePlanner({
         const nameLines = doc.splitTextToSize(ps(table.name), w - 3) as string[]
         nameLines.forEach((ln, i) => doc.text(ln, tx + w / 2, ty + h / 2 - 1 + (i - (nameLines.length - 1) / 2) * 3.2, { align: 'center' }))
         doc.setFont('helvetica', 'normal')
-        doc.setFontSize(5)
+        doc.setFontSize(4.8)
         doc.setTextColor(80, 60, 40)
-        doc.text(`${occ}/${table.capacity} locuri`, tx + w / 2, ty + h + 3.5, { align: 'center' })
-        portionParts.forEach((p, i) => doc.text(ps(p!), tx + w / 2, ty + h + 6.5 + i * 3.2, { align: 'center' }))
+        doc.text(`${occ}/${table.capacity}`, tx + w / 2, ty + h + 3.5, { align: 'center' })
+        if (portionStr) doc.text(ps(portionStr), tx + w / 2, ty + h + 7, { align: 'center' })
 
       } else {
         // head table
@@ -235,10 +255,10 @@ export default function TablePlanner({
         doc.setTextColor(100, 60, 0)
         doc.text(ps(table.name), tx + w / 2, ty + h / 2 + 2, { align: 'center' })
         doc.setFont('helvetica', 'normal')
-        doc.setFontSize(5)
+        doc.setFontSize(4.8)
         doc.setTextColor(80, 60, 40)
-        const summary = [`${occ}/${table.capacity} locuri`, ...portionParts.map(p => ps(p!))].join(' · ')
-        doc.text(summary, tx + w / 2, ty + h + 3.5, { align: 'center' })
+        const summary = [`${occ}/${table.capacity}`, portionStr].filter(Boolean).join(' · ')
+        doc.text(ps(summary), tx + w / 2, ty + h + 3.5, { align: 'center' })
       }
     }
 
@@ -247,23 +267,25 @@ export default function TablePlanner({
     doc.setFontSize(9)
     doc.setTextColor(60, 35, 15)
     doc.text(ps(eventName || 'Plan sala'), mg, mg + 6)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7)
-    doc.setTextColor(120, 90, 60)
 
-    // Footer summary
+    // Legend: i=intregi c=copii f=fara meniu
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(6)
+    doc.setTextColor(120, 90, 60)
+    doc.text('i = portie intreaga  ·  c = portie copil  ·  f = fara meniu', pageW - mg, mg + 6, { align: 'right' })
+
+    // Footer
     const totOcc = tables.reduce((s, t) => s + t.guests.reduce((a, g) => a + 1 + (g.has_plus_one ? 1 : 0), 0), 0)
     const totCap = tables.reduce((s, t) => s + t.capacity, 0)
     const totFull = tables.reduce((s, t) => s + t.guests.length + t.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'full').length, 0)
     const totHalf = tables.reduce((s, t) => s + t.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'half').length, 0)
     const totNone = tables.reduce((s, t) => s + t.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'none').length, 0)
-    const footerY = areaY + floorH + 6
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7)
     doc.setTextColor(80, 60, 40)
     doc.text(
       ps(`${tables.length} mese · ${totOcc}/${totCap} locuri · ${totFull} portii intregi · ${totHalf} portii copil · ${totNone} fara meniu · ${new Date().toLocaleDateString('ro-RO')}`),
-      mg, footerY
+      mg, pageH - mg + 2
     )
 
     doc.save(ps(`plan-sala-${(eventName || 'nunta').toLowerCase().replace(/\s+/g, '-')}.pdf`))
