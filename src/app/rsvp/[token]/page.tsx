@@ -142,8 +142,8 @@ export default function PublicRsvpPage() {
             {/* Companion section — only if attending */}
             {attending && (
               <>
-                <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-4 space-y-3">
-                  <p className="text-sm font-medium text-rose-700">Însoțitor (opțional)</p>
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 space-y-3">
+                  <p className="text-sm font-medium text-gray-500">Însoțitor (opțional)</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs text-gray-600">Prenume însoțitor</Label>
@@ -165,7 +165,7 @@ export default function PublicRsvpPage() {
                     </div>
                   </div>
                   {hasCompanion && (
-                    <p className="text-xs text-rose-600">
+                    <p className="text-xs text-green-700">
                       ✓ Veniți în 2: <strong>{[prenume, nume].filter(Boolean).join(' ')}</strong> și <strong>{[compPrenume, compNume].filter(Boolean).join(' ')}</strong>
                     </p>
                   )}
