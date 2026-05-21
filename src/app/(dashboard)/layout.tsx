@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import DashboardNav from '@/components/layout/DashboardNav'
+import SupportButton from '@/components/layout/SupportButton'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -18,6 +19,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-stone-50">
       <DashboardNav profile={profile} />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
+      <SupportButton />
     </div>
   )
 }
