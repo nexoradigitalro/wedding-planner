@@ -293,7 +293,8 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     const mg = 11, colGap = 5
     const colW = (pageW - 2 * mg - 2 * colGap) / 3
     const contentTop = 35, contentBottom = pageH - 13
-    const letterH = 7.5, nameLineH = 4, groupGap = 3, maxLineW = colW - 3
+    // letterH = 12: letter text at +5, decorative line at +7, names start at +12 → no overlap
+    const letterH = 12, nameLineH = 4.2, groupGap = 4, maxLineW = colW - 3
 
     function bg() {
       doc.setFillColor(254, 252, 248)
@@ -355,40 +356,65 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       grp.entries.push(entry)
     }
 
+    // Pre-calculate each group's rendered height for balanced column distribution
+    const groupHeights = groups.map(g => {
+      let h = letterH + groupGap
+      for (const entry of g.entries) {
+        h += (doc.splitTextToSize(entry, maxLineW) as string[]).length * nameLineH
+      }
+      return h
+    })
+    const totalH = groupHeights.reduce((a, b) => a + b, 0)
+    const colAvailH = contentBottom - contentTop
+
+    // If everything fits in 3 columns on one page, pre-compute balanced breakpoints
+    const breakAt: [number, number] = [-1, -1]
+    if (totalH <= colAvailH * 3) {
+      const target = totalH / 3
+      let acc = 0
+      for (let i = 0; i < groups.length; i++) {
+        acc += groupHeights[i]
+        if (breakAt[0] === -1 && acc >= target) breakAt[0] = i + 1
+        else if (breakAt[1] === -1 && acc >= target * 2) { breakAt[1] = i + 1; break }
+      }
+    }
+
     let ci = 0, y = contentTop
     function colX() { return mg + ci * (colW + colGap) }
     function nextCol() {
       ci++
-      if (ci > 2) {
-        footer()
-        doc.addPage()
-        bg(); border(); colSep()
-        ci = 0
-      }
+      if (ci > 2) { footer(); doc.addPage(); bg(); border(); colSep(); ci = 0 }
       y = contentTop
     }
 
-    for (const group of groups) {
+    for (let gi = 0; gi < groups.length; gi++) {
+      const group = groups[gi]
+
+      // Balanced advance: jump to column 2 or 3 at pre-calculated breakpoints
+      if (gi === breakAt[0]) { ci = 1; y = contentTop }
+      else if (gi === breakAt[1]) { ci = 2; y = contentTop }
+
+      // Overflow advance (for multi-page)
       if (y + letterH + nameLineH > contentBottom) nextCol()
 
-      // Letter header
+      // Letter header — text at y+5, decorative line at y+7, names begin at y+letterH(12)
       doc.setFont('times', 'bolditalic')
       doc.setFontSize(11)
       doc.setTextColor(155, 95, 45)
       doc.text(group.letter, colX() + colW / 2, y + 5, { align: 'center' })
       doc.setDrawColor(195, 158, 105)
       doc.setLineWidth(0.25)
-      doc.line(colX() + colW / 2 - 9, y + 6.5, colX() + colW / 2 + 9, y + 6.5)
+      doc.line(colX() + colW / 2 - 9, y + 7, colX() + colW / 2 + 9, y + 7)
       y += letterH
 
       // Names
       doc.setFont('helvetica', 'normal')
-      doc.setFontSize(7)
+      doc.setFontSize(7.5)
       doc.setTextColor(50, 35, 20)
       for (const entry of group.entries) {
-        const lines = doc.splitTextToSize(entry, maxLineW)
+        const lines = doc.splitTextToSize(entry, maxLineW) as string[]
         if (y + lines.length * nameLineH > contentBottom) nextCol()
-        for (const line of lines as string[]) {
+        for (const line of lines) {
           doc.text(line, colX() + colW / 2, y, { align: 'center' })
           y += nameLineH
         }
