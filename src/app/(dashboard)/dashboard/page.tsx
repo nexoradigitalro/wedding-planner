@@ -34,7 +34,7 @@ export default async function DashboardPage({ searchParams }: Props) {
     .single()
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'bun venit'
-  const rawTier = (planTier) as PlanTier
+  const rawTier = (profile?.plan_tier ?? 'free') as PlanTier
   const planTier = isPlanActive(rawTier, profile?.plan_expires_at ?? null) ? rawTier : 'free'
 
   return (
