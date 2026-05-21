@@ -23,14 +23,14 @@ export default function GiftCalculator({ eventId, initialGuests }: Props) {
   const present = guests.filter((g) => g.attended === true)
   const absent = guests.filter((g) => g.attended === false)
   const unmarked = guests.filter((g) => g.attended === null || g.attended === undefined)
-  const totalCollected = present.reduce((s, g) => s + (g.gift_amount ?? 0), 0)
-  const withGift = present.filter((g) => (g.gift_amount ?? 0) > 0)
+  const totalCollected = guests.reduce((s, g) => s + (g.gift_amount ?? 0), 0)
+  const withGift = guests.filter((g) => (g.gift_amount ?? 0) > 0)
   const avgGift = withGift.length > 0 ? Math.round(totalCollected / withGift.length) : 0
   const totalPersons = present.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
 
   async function setAttended(guest: GuestRow, val: boolean | null) {
-    setGuests((prev) => prev.map((g) => g.id === guest.id ? { ...g, attended: val, gift_amount: val ? g.gift_amount : null } : g))
-    await supabase.from('guests').update({ attended: val, gift_amount: val ? guest.gift_amount : null }).eq('id', guest.id)
+    setGuests((prev) => prev.map((g) => g.id === guest.id ? { ...g, attended: val } : g))
+    await supabase.from('guests').update({ attended: val }).eq('id', guest.id)
     if (val === true) {
       setTimeout(() => inputRefs.current[guest.id]?.focus(), 50)
     }
@@ -148,7 +148,7 @@ export default function GiftCalculator({ eventId, initialGuests }: Props) {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end">
-                    {guest.attended === true ? (
+                    {guest.attended !== null && guest.attended !== undefined ? (
                       <div className="relative">
                         <input
                           ref={(el) => { inputRefs.current[guest.id] = el }}
@@ -182,7 +182,7 @@ export default function GiftCalculator({ eventId, initialGuests }: Props) {
               Total colectat: <span className="text-rose-600">{totalCollected.toLocaleString('ro-RO')} RON</span>
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
-              {withGift.length} din {present.length} prezenți au dat cinste · medie {avgGift.toLocaleString('ro-RO')} RON/invitație
+              {withGift.length} invitați au dat cinste · medie {avgGift.toLocaleString('ro-RO')} RON/invitație
             </p>
           </div>
           {unmarked.length > 0 && (
