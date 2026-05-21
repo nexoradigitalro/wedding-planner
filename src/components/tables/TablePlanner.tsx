@@ -96,6 +96,31 @@ export default function TablePlanner({
   const [searchQuery, setSearchQuery] = useState('')
   const [highlightCategory, setHighlightCategory] = useState<string | null>(null)
 
+  const [tableScales, setTableScales] = useState<Record<string, number>>(() => {
+    if (typeof window === 'undefined') return {}
+    try { return JSON.parse(localStorage.getItem(`table_scales_${eventId}`) ?? '{}') } catch { return {} }
+  })
+  const [lockedTables, setLockedTables] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try { return new Set(JSON.parse(localStorage.getItem(`locked_tables_${eventId}`) ?? '[]')) } catch { return new Set() }
+  })
+
+  useEffect(() => {
+    localStorage.setItem(`table_scales_${eventId}`, JSON.stringify(tableScales))
+  }, [tableScales, eventId])
+
+  useEffect(() => {
+    localStorage.setItem(`locked_tables_${eventId}`, JSON.stringify([...lockedTables]))
+  }, [lockedTables, eventId])
+
+  function adjustScale(tableId: string, delta: number) {
+    setTableScales(prev => ({ ...prev, [tableId]: Math.max(0.4, Math.min(1.3, parseFloat(((prev[tableId] ?? 1) + delta).toFixed(2)))) }))
+  }
+
+  function toggleLock(tableId: string) {
+    setLockedTables(prev => { const s = new Set(prev); s.has(tableId) ? s.delete(tableId) : s.add(tableId); return s })
+  }
+
   const searchResult = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return null
@@ -693,6 +718,8 @@ export default function TablePlanner({
                 const isDragging = draggingId === table.id
                 const hasHighlightedCat = highlightCategory ? table.guests.some(g => g.category === highlightCategory) : false
                 const ringColor = highlightCategory ? CATEGORY_LABELS[highlightCategory]?.ring : undefined
+                const scale = tableScales[table.id] ?? 1
+                const isLocked = lockedTables.has(table.id)
                 return (
                   <div
                     key={table.id}
@@ -702,6 +729,8 @@ export default function TablePlanner({
                       filter: isDragging ? 'drop-shadow(0 8px 20px rgba(0,0,0,0.2))' : undefined,
                       opacity: highlightCategory && !hasHighlightedCat ? 0.3 : 1,
                       transition: 'opacity 0.2s',
+                      transform: scale !== 1 ? `scale(${scale})` : undefined,
+                      transformOrigin: 'top left',
                       borderRadius: 16,
                       boxShadow: highlightCategory && hasHighlightedCat ? `0 0 0 4px ${ringColor}, 0 0 20px ${ringColor}88` : undefined,
                     }}
@@ -711,16 +740,45 @@ export default function TablePlanner({
                         className={cn(
                           'flex items-center h-6 rounded-t-xl select-none text-[11px]',
                           isDragging ? 'bg-rose-100 text-rose-500' : 'text-slate-400',
+                          isLocked && 'border border-amber-300',
                         )}
-                        style={{ minWidth: 80, background: isDragging ? undefined : 'rgba(255,255,255,0.7)' }}
+                        style={{ minWidth: 80, background: isDragging ? undefined : isLocked ? 'rgba(254,243,199,0.9)' : 'rgba(255,255,255,0.7)' }}
                       >
-                        <div
-                          className="flex-1 flex items-center justify-center cursor-move hover:text-slate-700"
-                          onMouseDown={e => startCanvasDrag(e, table.id, 'table')}
-                          title="Trage pentru a muta masa"
+                        {isLocked ? (
+                          <div className="flex-1 flex items-center justify-center gap-1 text-amber-500 text-[10px]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M17 11V7A5 5 0 0 0 7 7v4H5v11h14V11h-2zm-6 6.7V16a1 1 0 0 1 2 0v1.7a1 1 0 1 1-2 0zM15 11H9V7a3 3 0 0 1 6 0v4z"/></svg>
+                            blocat
+                          </div>
+                        ) : (
+                          <div
+                            className="flex-1 flex items-center justify-center cursor-move hover:text-slate-700"
+                            onMouseDown={e => startCanvasDrag(e, table.id, 'table')}
+                            title="Trage pentru a muta masa"
+                          >
+                            ⠿ ⠿ ⠿
+                          </div>
+                        )}
+                        <button
+                          onClick={() => adjustScale(table.id, -0.1)}
+                          className="px-1 h-full flex items-center hover:text-gray-800 transition-colors font-bold text-[13px] leading-none"
+                          title="Micșorează masa"
+                        >−</button>
+                        <button
+                          onClick={() => adjustScale(table.id, 0.1)}
+                          className="px-1 h-full flex items-center hover:text-gray-800 transition-colors font-bold text-[13px] leading-none"
+                          title="Mărește masa"
+                        >+</button>
+                        <button
+                          onClick={() => toggleLock(table.id)}
+                          className={`px-1 h-full flex items-center transition-colors ${isLocked ? 'text-amber-500 hover:text-amber-700' : 'hover:text-slate-700'}`}
+                          title={isLocked ? 'Deblochează masa' : 'Blochează masa (finalizat)'}
                         >
-                          ⠿ ⠿ ⠿
-                        </div>
+                          {isLocked ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M17 11V7A5 5 0 0 0 7 7v4H5v11h14V11h-2zm-6 6.7V16a1 1 0 0 1 2 0v1.7a1 1 0 1 1-2 0zM15 11H9V7a3 3 0 0 1 6 0v4z"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                          )}
+                        </button>
                         <button
                           onClick={() => openEditTable(table)}
                           className="px-1.5 h-full flex items-center hover:text-gray-800 transition-colors"
@@ -736,8 +794,8 @@ export default function TablePlanner({
                       guests={table.guests}
                       capacity={table.capacity}
                       shape={table.shape}
-                      canEdit={canEdit}
-                      onDelete={canEdit ? () => handleDeleteTable(table.id) : undefined}
+                      canEdit={canEdit && !isLocked}
+                      onDelete={canEdit && !isLocked ? () => handleDeleteTable(table.id) : undefined}
                     />
                   </div>
                 )
