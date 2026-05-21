@@ -12,6 +12,17 @@ export type ActivityAction =
   | 'rsvp_updated'
   | 'collaborator_invited'
 
+export interface BudgetItem {
+  id: string
+  event_id: string
+  category: string
+  name: string
+  estimated_amount: number
+  paid_amount: number
+  notes: string | null
+  created_at: string
+}
+
 export interface Profile {
   id: string
   email: string
