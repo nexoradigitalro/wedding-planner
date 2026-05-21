@@ -65,7 +65,7 @@ export default async function DashboardPage({ searchParams }: Props) {
               </div>
               <div>
                 <h2 className="font-[family-name:var(--font-playfair)] text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                  Bun venit la Nunta Mea!
+                  Bun venit la Planner Nuntă!
                 </h2>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   Creează primul eveniment și ești gata în câteva minute.

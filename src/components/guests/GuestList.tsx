@@ -277,7 +277,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
         doc.setFontSize(7)
         doc.setTextColor(150, 150, 150)
         doc.text(`Pagina ${data.pageNumber}`, pageW / 2, pageH - 6, { align: 'center' })
-        doc.text('Nunta Mea', 14, pageH - 6)
+        doc.text('Planner Nunta', 14, pageH - 6)
       },
     })
 
@@ -320,7 +320,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       doc.setFontSize(6.5)
       doc.setTextColor(170, 130, 90)
       doc.text(
-        pdfSafe(`${guests.length} invitatii · ${new Date().toLocaleDateString('ro-RO')} · Nunta Mea`),
+        pdfSafe(`${guests.length} invitatii · ${new Date().toLocaleDateString('ro-RO')} · Planner Nunta`),
         pageW / 2, pageH - 8, { align: 'center' }
       )
     }

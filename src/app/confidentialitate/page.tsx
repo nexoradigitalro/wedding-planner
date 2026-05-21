@@ -2,8 +2,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Politică de confidențialitate — Nunta Mea',
-  description: 'Cum colectăm, stocăm și protejăm datele tale pe platforma Nunta Mea.',
+  title: 'Politică de confidențialitate — Planner Nuntă',
+  description: 'Cum colectăm, stocăm și protejăm datele tale pe platforma Planner Nuntă.',
 }
 
 export default function ConfidentialitatePage() {
@@ -24,7 +24,7 @@ export default function ConfidentialitatePage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Cine suntem</h2>
             <p>
-              <strong>Nunta Mea</strong> este operată de Nexora Digital. Suntem operatorul de date cu caracter
+              <strong>Planner Nuntă</strong> este operată de Nexora Digital. Suntem operatorul de date cu caracter
               personal în sensul Regulamentului (UE) 2016/679 (GDPR). Contact: <strong>nexoradigitalro@gmail.com</strong>
             </p>
           </section>
@@ -55,7 +55,7 @@ export default function ConfidentialitatePage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-3">3. Cum folosim datele</h2>
             <ul className="list-disc pl-5 space-y-2">
-              <li>Furnizarea și îmbunătățirea serviciului Nunta Mea</li>
+              <li>Furnizarea și îmbunătățirea serviciului Planner Nuntă</li>
               <li>Autentificarea în cont și securitate</li>
               <li>Procesarea plăților (prin Stripe)</li>
               <li>Trimiterea emailurilor tranzacționale (magic link, RSVP)</li>

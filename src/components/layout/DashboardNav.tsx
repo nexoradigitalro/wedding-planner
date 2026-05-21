@@ -39,7 +39,7 @@ export default function DashboardNav({ profile }: Props) {
             </svg>
           </span>
           <span className="font-[family-name:var(--font-playfair)] text-xl font-semibold text-gray-900 tracking-wide group-hover:text-rose-600 transition-colors">
-            Nunta <span className="italic font-normal text-rose-600">Mea</span>
+            Planner <span className="italic font-normal text-rose-600">Nuntă</span>
           </span>
         </Link>
 

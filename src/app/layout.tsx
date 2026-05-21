@@ -16,8 +16,8 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Nunta Mea — Organizator de nuntă din România',
-    template: '%s — Nunta Mea',
+    default: 'Planner Nuntă — Wedding Planner din România',
+    template: '%s — Planner Nuntă',
   },
   description: 'Organizează nunta perfect: invitați, mese, plan de mese drag & drop, RSVP online și colaborare în timp real cu partenerul.',
   keywords: ['organizator nunta', 'plan mese nunta', 'rsvp nunta', 'lista invitati nunta', 'wedding planner romania'],
@@ -25,21 +25,21 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ro_RO',
-    siteName: 'Nunta Mea',
-    title: 'Nunta Mea — Organizator de nuntă din România',
+    siteName: 'Planner Nuntă',
+    title: 'Planner Nuntă — Wedding Planner din România',
     description: 'Invitați, mese, RSVP și colaborare în timp real — totul într-un singur loc. Gratuit pentru nunți cu până la 50 de invitați.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Nunta Mea — Organizator de nuntă',
+        alt: 'Planner Nuntă — Organizator de nuntă',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Nunta Mea — Organizator de nuntă din România',
+    title: 'Planner Nuntă — Wedding Planner din România',
     description: 'Invitați, mese, RSVP și colaborare în timp real — totul într-un singur loc.',
     images: ['/og-image.png'],
   },

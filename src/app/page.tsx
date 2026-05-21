@@ -168,10 +168,10 @@ export default async function LandingPage() {
             ))}
           </div>
 
-          {/* Pro spotlight — De ce Nunta Mea */}
+          {/* Pro spotlight — De ce Planner Nuntă */}
           <div>
             <div className="text-center mb-10">
-              <p className="text-rose-500 text-sm font-medium tracking-widest uppercase mb-3">De ce Nunta Mea</p>
+              <p className="text-rose-500 text-sm font-medium tracking-widest uppercase mb-3">De ce Planner Nuntă</p>
               <h2 className="font-[family-name:var(--font-playfair)] text-3xl sm:text-4xl font-bold text-gray-900">
                 Instrumente pe care <span className="italic font-normal text-gray-400">nu le găsești altundeva</span>
               </h2>
@@ -549,7 +549,7 @@ export default async function LandingPage() {
             </div>
           </div>
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-500 text-xs">
-            <p>© 2026 Nunta Mea · Realizat de Nexora Digital. Toate drepturile rezervate.</p>
+            <p>© 2026 Planner Nuntă · Realizat de Nexora Digital. Toate drepturile rezervate.</p>
             <p>Plată securizată prin Stripe · Fără reînnoire automată</p>
           </div>
         </div>

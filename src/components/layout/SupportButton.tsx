@@ -23,14 +23,14 @@ export default function SupportButton() {
           </div>
           <div className="h-px bg-stone-100" />
           <a
-            href="mailto:salut@nuntaplanner.ro"
+            href="mailto:salut@plannernunta.ro"
             className="flex items-center gap-3 p-3 rounded-xl hover:bg-stone-50 transition-colors group"
           >
             <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-500"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-800 group-hover:text-rose-600 transition-colors">salut@nuntaplanner.ro</p>
+              <p className="text-xs font-medium text-gray-800 group-hover:text-rose-600 transition-colors">salut@plannernunta.ro</p>
               <p className="text-xs text-gray-400">Trimite un email</p>
             </div>
           </a>

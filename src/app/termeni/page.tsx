@@ -2,8 +2,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Termeni și condiții — Nunta Mea',
-  description: 'Termenii și condițiile de utilizare ale platformei Nunta Mea.',
+  title: 'Termeni și condiții — Planner Nuntă',
+  description: 'Termenii și condițiile de utilizare ale platformei Planner Nuntă.',
 }
 
 export default function TermeniPage() {
@@ -24,7 +24,7 @@ export default function TermeniPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Acceptarea termenilor</h2>
             <p>
-              Prin accesarea și utilizarea platformei <strong>Nunta Mea</strong> (disponibilă la nuntamea.ro), operată de
+              Prin accesarea și utilizarea platformei <strong>Planner Nuntă</strong> (disponibilă la plannernunta.ro), operată de
               Nexora Digital, ești de acord să respecți acești termeni și condiții. Dacă nu ești de acord, te rugăm să nu
               folosești serviciul.
             </p>
@@ -33,7 +33,7 @@ export default function TermeniPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-3">2. Descrierea serviciului</h2>
             <p>
-              Nunta Mea este o platformă SaaS pentru organizarea nunților: gestionarea invitaților, planul de mese,
+              Planner Nuntă este o platformă SaaS pentru organizarea nunților: gestionarea invitaților, planul de mese,
               colectarea RSVP-urilor și colaborare în timp real. Serviciul este disponibil în variante gratuite și plătite.
             </p>
           </section>
