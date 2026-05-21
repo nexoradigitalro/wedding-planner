@@ -425,13 +425,29 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       )}
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Input
-          placeholder="Caută după nume sau email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="sm:max-w-xs"
-        />
+      <div className="flex flex-col sm:flex-row gap-3 items-start">
+        {/* Search + Add button stacked on the left */}
+        <div className="flex flex-col gap-2 w-full sm:w-auto">
+          <Input
+            placeholder="Caută după nume sau email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="sm:w-72"
+          />
+          {canEdit && (
+            atGuestLimit ? (
+              <Button variant="outline" className="border-rose-300 text-rose-600 hover:bg-rose-50 w-full sm:w-72" onClick={() => setShowUpgradeModal(true)}>
+                + Adaugă invitat
+              </Button>
+            ) : (
+              <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-72" onClick={openAdd}>
+                + Adaugă invitat
+              </Button>
+            )
+          )}
+        </div>
+
+        {/* Filters */}
         <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v ?? 'all')}>
           <SelectTrigger className="sm:w-40">
             <SelectValue>{filterCategory === 'all' ? 'Toate' : CATEGORY_LABELS[filterCategory]}</SelectValue>
@@ -456,6 +472,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
           </SelectContent>
         </Select>
 
+        {/* Export buttons */}
         <div className="flex gap-2 sm:ml-auto flex-wrap">
           {guests.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleCsvExport}>
@@ -476,15 +493,6 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
               <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
                 📥 Import Excel
               </Button>
-              {atGuestLimit ? (
-                <Button size="sm" variant="outline" className="border-rose-300 text-rose-600 hover:bg-rose-50" onClick={() => setShowUpgradeModal(true)}>
-                  + Invitat
-                </Button>
-              ) : (
-                <Button size="sm" className="bg-rose-600 hover:bg-rose-700" onClick={openAdd}>
-                  + Invitat
-                </Button>
-              )}
             </>
           )}
         </div>

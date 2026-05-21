@@ -536,6 +536,22 @@ export default function TablePlanner({
         </div>
       </div>
 
+      {/* Feature hints — desktop only */}
+      <div className="hidden md:flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 flex-shrink-0 flex-wrap">
+        <span className="font-semibold text-slate-600 mr-1">Cum funcționează:</span>
+        <span>🖱 Trage invitații între mese</span>
+        <span className="text-slate-300">·</span>
+        <span>− / + Dimensionează masa</span>
+        <span className="text-slate-300">·</span>
+        <span>🔒 Blochează o masă finalizată</span>
+        <span className="text-slate-300">·</span>
+        <span>Rotița mouse sau butoanele = zoom</span>
+        <span className="text-slate-300">·</span>
+        <span>Filtrele colorate = vizualizezi categoriile</span>
+        <span className="text-slate-300">·</span>
+        <span>Caută = găsești rapid la ce masă e un invitat</span>
+      </div>
+
       {/* Mobile list view */}
       <div className="md:hidden space-y-3 overflow-y-auto pb-4">
         {unassigned.length > 0 && (
