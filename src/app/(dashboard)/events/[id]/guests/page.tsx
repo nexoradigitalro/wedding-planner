@@ -14,7 +14,7 @@ export default async function GuestsPage({ params }: Props) {
 
   const { data: event } = await supabase
     .from('events')
-    .select('name')
+    .select('name, date')
     .eq('id', id)
     .single()
 
@@ -55,6 +55,7 @@ export default async function GuestsPage({ params }: Props) {
       canEdit={canEdit}
       planTier={profile?.plan_tier ?? 'free'}
       eventName={event?.name ?? ''}
+      eventDate={event?.date ?? null}
     />
   )
 }

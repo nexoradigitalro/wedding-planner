@@ -28,6 +28,7 @@ interface Props {
   canEdit: boolean
   planTier: string
   eventName?: string
+  eventDate?: string | null
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -68,7 +69,7 @@ const emptyGuest = {
   dietary: '', notes: '',
 }
 
-export default function GuestList({ eventId, userId, initialGuests, tables, canEdit, planTier, eventName }: Props) {
+export default function GuestList({ eventId, userId, initialGuests, tables, canEdit, planTier, eventName, eventDate }: Props) {
   const [guests, setGuests] = useState<Guest[]>(initialGuests)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
@@ -209,7 +210,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(255, 200, 200)
     doc.text(
-      pdfSafe(`${guests.length} invitatii · ${sortBy === 'alpha' ? 'Ordine alfabetica' : 'Grupat pe mese'} · ${new Date().toLocaleDateString('ro-RO')}`),
+      pdfSafe(`${guests.length} invitatii · ${sortBy === 'alpha' ? 'Ordine alfabetica' : 'Grupat pe mese'}${eventDate ? ' · ' + new Date(eventDate).toLocaleDateString('ro-RO') : ''}`),
       pageW / 2, 18, { align: 'center' }
     )
     doc.setTextColor(0)
@@ -320,7 +321,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       doc.setFontSize(6.5)
       doc.setTextColor(170, 130, 90)
       doc.text(
-        pdfSafe(`${guests.length} invitatii · ${new Date().toLocaleDateString('ro-RO')} · Planner Nunta`),
+        pdfSafe(eventDate ? new Date(eventDate).toLocaleDateString('ro-RO') : new Date().toLocaleDateString('ro-RO')),
         pageW / 2, pageH - 8, { align: 'center' }
       )
     }
