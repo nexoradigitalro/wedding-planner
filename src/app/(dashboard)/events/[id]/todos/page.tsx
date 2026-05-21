@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TodoList from '@/components/todos/TodoList'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -47,7 +49,28 @@ export default async function TodosPage({ params }: Props) {
     .eq('id', user.id)
     .single()
 
-  if (profile?.plan_tier !== 'pro') redirect(`/events/${id}/guests`)
+  if (!profile?.plan_tier || profile.plan_tier === 'free') redirect(`/events/${id}/guests`)
+
+  if (profile.plan_tier === 'basic') {
+    return (
+      <div className="max-w-md mx-auto py-12 text-center space-y-5">
+        <div className="text-5xl">✅</div>
+        <h2 className="font-[family-name:var(--font-playfair)] text-2xl font-bold text-gray-900">
+          Wedding Planner To-Do
+        </h2>
+        <p className="text-gray-500 text-sm leading-relaxed">
+          O listă de sarcini gândită special pentru nunți — de la florărie la DJ, totul organizat pe categorii cu termene și progres vizibil.
+          Disponibil în planul <strong>Pro</strong>.
+        </p>
+        <Link href="/upgrade?autostart=pro">
+          <Button className="bg-rose-600 hover:bg-rose-700 px-8">
+            Activează Pro — 109 RON
+          </Button>
+        </Link>
+        <p className="text-xs text-gray-400">O singură plată · Fără abonament</p>
+      </div>
+    )
+  }
 
   let { data: todos } = await supabase
     .from('wedding_todos')

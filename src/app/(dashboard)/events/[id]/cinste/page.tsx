@@ -32,11 +32,11 @@ export default async function CinstePage({ params }: Props) {
         </h2>
         <p className="text-gray-500 text-sm leading-relaxed">
           Marchează cine a fost prezent, înregistrează cinstea primită și vezi totalul colectat în timp real.
-          Disponibil în planul <strong>Pro</strong>.
+          Disponibil începând cu planul <strong>Basic</strong>.
         </p>
-        <Link href="/upgrade?autostart=pro">
+        <Link href="/upgrade?autostart=basic">
           <Button className="bg-rose-600 hover:bg-rose-700 px-8">
-            Activează Pro — 109 RON
+            Activează Basic — 79 RON
           </Button>
         </Link>
         <p className="text-xs text-gray-400">O singură plată · Fără abonament</p>

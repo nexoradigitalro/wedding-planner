@@ -48,7 +48,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     pdfExport: false,
     qrCheckin: false,
     activityFeed: true,
-    giftCalculator: false,
+    giftCalculator: true,
   },
   pro: {
     maxGuests: null,
