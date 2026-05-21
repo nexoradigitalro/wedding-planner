@@ -49,7 +49,7 @@ export default async function TodosPage({ params }: Props) {
     .eq('id', user.id)
     .single()
 
-  if (profile.plan_tier === 'free' || profile.plan_tier === 'basic') {
+  if (!profile || profile.plan_tier === 'free' || profile.plan_tier === 'basic') {
     return (
       <div className="max-w-lg mx-auto py-10 space-y-6">
         <div className="rounded-2xl border border-stone-800 bg-gradient-to-br from-stone-950 to-stone-900 flex flex-col p-8 space-y-5">
