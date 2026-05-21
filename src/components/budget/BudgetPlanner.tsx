@@ -120,7 +120,7 @@ export default function BudgetPlanner({ eventId, initialItems, canEdit }: Props)
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total estimat', value: fmt(totalEstimated), color: 'text-gray-900' },
+          { label: 'Total de plătit', value: fmt(totalEstimated), color: 'text-gray-900' },
           { label: 'Plătit', value: fmt(totalPaid), color: 'text-green-600' },
           { label: 'Rămas de plătit', value: fmt(Math.max(0, totalLeft)), color: totalLeft > 0 ? 'text-rose-600' : 'text-green-600' },
           { label: 'Acoperit', value: `${paidPct}%`, color: paidPct >= 100 ? 'text-green-600' : paidPct > 50 ? 'text-amber-500' : 'text-rose-500' },
@@ -145,7 +145,7 @@ export default function BudgetPlanner({ eventId, initialItems, canEdit }: Props)
               style={{ width: `${paidPct}%` }}
             />
           </div>
-          <p className="text-xs text-gray-400 mt-1.5 text-right">{paidPct}% din buget achitat</p>
+          <p className="text-xs text-gray-400 mt-1.5 text-right">{paidPct}% achitat</p>
         </div>
       )}
 
@@ -181,7 +181,7 @@ export default function BudgetPlanner({ eventId, initialItems, canEdit }: Props)
               <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50 border-b border-stone-200">
                 <span className="font-semibold text-sm text-gray-800">{def.emoji} {def.label}</span>
                 <div className="flex items-center gap-4 text-xs">
-                  <span className="text-gray-500">Estimat: <strong>{fmt(catEst)}</strong></span>
+                  <span className="text-gray-500">De plătit: <strong>{fmt(catEst)}</strong></span>
                   <span className="text-green-600">Plătit: <strong>{fmt(catPaid)}</strong></span>
                   {catLeft > 0 && <span className="text-rose-500">Rămas: <strong>{fmt(catLeft)}</strong></span>}
                 </div>
@@ -200,7 +200,7 @@ export default function BudgetPlanner({ eventId, initialItems, canEdit }: Props)
                         {item.notes && <p className="text-xs text-gray-400 truncate">{item.notes}</p>}
                       </div>
                       <div className="text-right text-xs shrink-0 space-y-0.5">
-                        <p className="text-gray-400">{fmt(Number(item.estimated_amount))} estimat</p>
+                        <p className="text-gray-400">{fmt(Number(item.estimated_amount))} de plătit</p>
                         <p className="text-green-600 font-semibold">{fmt(Number(item.paid_amount))} plătit</p>
                         {!isPaid && Number(item.estimated_amount) > 0 && (
                           <p className="text-rose-500">{fmt(left)} rămas</p>
@@ -266,7 +266,7 @@ export default function BudgetPlanner({ eventId, initialItems, canEdit }: Props)
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label>Estimat (RON)</Label>
+                <Label>De plătit (RON)</Label>
                 <Input
                   type="number"
                   min={0}
