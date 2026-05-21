@@ -210,7 +210,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(255, 200, 200)
     doc.text(
-      pdfSafe(`${guests.length} invitati · ${sortBy === 'alpha' ? 'Lista invitati A-Z' : 'Lista invitati pe mese'}${eventDate ? ' · ' + new Date(eventDate).toLocaleDateString('ro-RO') : ''}`),
+      pdfSafe(`${sortBy === 'alpha' ? 'Lista invitati A-Z' : 'Lista invitati pe mese'}${eventDate ? ' · ' + new Date(eventDate).toLocaleDateString('ro-RO') : ''}`),
       pageW / 2, 18, { align: 'center' }
     )
     doc.setTextColor(0)
