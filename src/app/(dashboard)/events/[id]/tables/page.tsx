@@ -13,12 +13,14 @@ export default async function TablesPage({ params }: Props) {
   if (!user) redirect('/login')
 
   const [
+    { data: event },
     { data: tables },
     { data: unassigned },
     { data: member },
     { data: profile },
     { data: venueElements },
   ] = await Promise.all([
+    supabase.from('events').select('name').eq('id', id).single(),
     supabase.from('tables').select('*, guests(*)').eq('event_id', id).order('name'),
     supabase.from('guests').select('*').eq('event_id', id).is('table_id', null).neq('rsvp_status', 'declined').order('name'),
     supabase.from('event_members').select('role').eq('event_id', id).eq('user_id', user.id).single(),
@@ -37,6 +39,7 @@ export default async function TablesPage({ params }: Props) {
       initialVenueElements={venueElements ?? []}
       canEdit={canEdit}
       planTier={profile?.plan_tier ?? 'free'}
+      eventName={event?.name ?? ''}
     />
   )
 }

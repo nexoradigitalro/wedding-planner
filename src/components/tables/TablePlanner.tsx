@@ -59,6 +59,7 @@ interface Props {
   initialVenueElements: VenueElement[]
   canEdit: boolean
   planTier: string
+  eventName?: string
 }
 
 function autoLayout(tables: (Table & { guests: Guest[] })[]): Record<string, TablePos> {
@@ -72,7 +73,7 @@ function autoLayout(tables: (Table & { guests: Guest[] })[]): Record<string, Tab
 }
 
 export default function TablePlanner({
-  eventId, userId, initialTables, initialUnassigned, initialVenueElements, canEdit, planTier,
+  eventId, userId, initialTables, initialUnassigned, initialVenueElements, canEdit, planTier, eventName,
 }: Props) {
   const [tables, setTables] = useState(initialTables)
   const [unassigned, setUnassigned] = useState(initialUnassigned)
@@ -119,6 +120,156 @@ export default function TablePlanner({
 
   function toggleLock(tableId: string) {
     setLockedTables(prev => { const s = new Set(prev); s.has(tableId) ? s.delete(tableId) : s.add(tableId); return s })
+  }
+
+  async function handleFloorPlanExport() {
+    const { default: jsPDF } = await import('jspdf')
+    const ps = (s: string) => s
+      .replace(/[ăâ]/g, 'a').replace(/[ĂÂ]/g, 'A')
+      .replace(/î/g, 'i').replace(/Î/g, 'I')
+      .replace(/[șş]/g, 's').replace(/[ȘŞ]/g, 'S')
+      .replace(/[țţ]/g, 't').replace(/[ȚŢ]/g, 'T')
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const pageW = 297, pageH = 210
+    const mg = 10
+    const headerH = 10
+    const footerH = 10
+    const areaX = mg, areaY = mg + headerH
+    const areaW = pageW - 2 * mg
+    const areaH = pageH - mg - headerH - footerH
+
+    const scale = Math.min(areaW / CANVAS_W, areaH / CANVAS_H)
+    const floorW = CANVAS_W * scale
+    const floorH = CANVAS_H * scale
+
+    // Floor background
+    doc.setFillColor(242, 228, 204)
+    doc.rect(areaX, areaY, floorW, floorH, 'F')
+
+    // Hall walls outline
+    const wallPad = 48 * scale
+    doc.setDrawColor(160, 110, 55)
+    doc.setLineWidth(0.6)
+    doc.rect(areaX + wallPad, areaY + wallPad, floorW - 2 * wallPad, floorH - 2 * wallPad)
+
+    function cx(x: number) { return areaX + x * scale }
+    function cy(y: number) { return areaY + y * scale }
+
+    // Venue elements
+    for (const el of venueElements) {
+      const def = ELEMENT_DEFS[el.type] ?? { label: el.label ?? el.type, emoji: '📍' }
+      const x = cx(el.position_x), y = cy(el.position_y)
+      const w = el.width * scale, h = el.height * scale
+      doc.setFillColor(245, 245, 220)
+      doc.setDrawColor(180, 160, 100)
+      doc.setLineWidth(0.3)
+      doc.roundedRect(x, y, w, h, 1, 1, 'FD')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(5.5)
+      doc.setTextColor(60, 50, 20)
+      doc.text(ps(def.label), x + w / 2, y + h / 2 + 1.5, { align: 'center' })
+    }
+
+    // Tables
+    for (const table of tables) {
+      const pos = positions[table.id] ?? { x: 80, y: 80 }
+      const occ = table.guests.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
+      const fullP = table.guests.length + table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'full').length
+      const halfP = table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'half').length
+      const noneP = table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'none').length
+      const portionParts = [
+        fullP > 0 ? `${fullP} intregi` : null,
+        halfP > 0 ? `${halfP} copii` : null,
+        noneP > 0 ? `${noneP} fara` : null,
+      ].filter(Boolean)
+
+      if (table.shape === 'round') {
+        const r = 13
+        const tx = cx(pos.x) + r, ty = cy(pos.y) + r
+        doc.setFillColor(255, 253, 248)
+        doc.setDrawColor(120, 80, 40)
+        doc.setLineWidth(0.5)
+        doc.circle(tx, ty, r, 'FD')
+        // Table name inside
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(6)
+        doc.setTextColor(40, 20, 5)
+        const nameLines = doc.splitTextToSize(ps(table.name), r * 1.5) as string[]
+        nameLines.forEach((ln, i) => doc.text(ln, tx, ty - 1.5 + (i - (nameLines.length - 1) / 2) * 3.2, { align: 'center' }))
+        // Occupancy + portions below
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(5)
+        doc.setTextColor(80, 60, 40)
+        doc.text(`${occ}/${table.capacity} locuri`, tx, ty + r + 3.5, { align: 'center' })
+        portionParts.forEach((p, i) => doc.text(ps(p!), tx, ty + r + 6.5 + i * 3.2, { align: 'center' }))
+
+      } else if (table.shape === 'rectangular') {
+        const w = 28, h = 18
+        const tx = cx(pos.x), ty = cy(pos.y)
+        doc.setFillColor(255, 253, 248)
+        doc.setDrawColor(120, 80, 40)
+        doc.setLineWidth(0.5)
+        doc.roundedRect(tx, ty, w, h, 1.5, 1.5, 'FD')
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(6)
+        doc.setTextColor(40, 20, 5)
+        const nameLines = doc.splitTextToSize(ps(table.name), w - 3) as string[]
+        nameLines.forEach((ln, i) => doc.text(ln, tx + w / 2, ty + h / 2 - 1 + (i - (nameLines.length - 1) / 2) * 3.2, { align: 'center' }))
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(5)
+        doc.setTextColor(80, 60, 40)
+        doc.text(`${occ}/${table.capacity} locuri`, tx + w / 2, ty + h + 3.5, { align: 'center' })
+        portionParts.forEach((p, i) => doc.text(ps(p!), tx + w / 2, ty + h + 6.5 + i * 3.2, { align: 'center' }))
+
+      } else {
+        // head table
+        const w = 50, h = 13
+        const tx = cx(pos.x), ty = cy(pos.y)
+        doc.setFillColor(255, 248, 220)
+        doc.setDrawColor(180, 130, 30)
+        doc.setLineWidth(0.7)
+        doc.roundedRect(tx, ty, w, h, 1.5, 1.5, 'FD')
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(6.5)
+        doc.setTextColor(100, 60, 0)
+        doc.text(ps(table.name), tx + w / 2, ty + h / 2 + 2, { align: 'center' })
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(5)
+        doc.setTextColor(80, 60, 40)
+        const summary = [`${occ}/${table.capacity} locuri`, ...portionParts.map(p => ps(p!))].join(' · ')
+        doc.text(summary, tx + w / 2, ty + h + 3.5, { align: 'center' })
+      }
+    }
+
+    // Header
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(60, 35, 15)
+    doc.text(ps(eventName || 'Plan sala'), mg, mg + 6)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(120, 90, 60)
+
+    // Footer summary
+    const totOcc = tables.reduce((s, t) => s + t.guests.reduce((a, g) => a + 1 + (g.has_plus_one ? 1 : 0), 0), 0)
+    const totCap = tables.reduce((s, t) => s + t.capacity, 0)
+    const totFull = tables.reduce((s, t) => s + t.guests.length + t.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'full').length, 0)
+    const totHalf = tables.reduce((s, t) => s + t.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'half').length, 0)
+    const totNone = tables.reduce((s, t) => s + t.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'none').length, 0)
+    const footerY = areaY + floorH + 6
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(80, 60, 40)
+    doc.text(
+      ps(`${tables.length} mese · ${totOcc}/${totCap} locuri · ${totFull} portii intregi · ${totHalf} portii copil · ${totNone} fara meniu · ${new Date().toLocaleDateString('ro-RO')}`),
+      mg, footerY
+    )
+
+    doc.save(ps(`plan-sala-${(eventName || 'nunta').toLowerCase().replace(/\s+/g, '-')}.pdf`))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { toast } = await import('sonner') as any
+    toast.success('Plan sala exportat!')
   }
 
   const searchResult = useMemo(() => {
@@ -471,8 +622,11 @@ export default function TablePlanner({
             >+</button>
           </div>
         </div>
-        {canEdit && (
-          <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" variant="outline" className="border-stone-300 text-stone-600 hover:bg-stone-50" onClick={handleFloorPlanExport}>
+            📄 Export PDF Sală
+          </Button>
+          {canEdit && (<>
             <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50" onClick={openHeadTable}>
               💒 Masa Mirilor
             </Button>
@@ -490,8 +644,8 @@ export default function TablePlanner({
                 + Masă nouă
               </Button>
             )}
-          </div>
-        )}
+          </>)}
+        </div>
         </div>
         {/* Search + category filter */}
         <div className="flex items-center gap-2 flex-wrap">
