@@ -80,7 +80,7 @@ export default async function LandingPage() {
               </Button>
             </a>
           </div>
-          <p className="text-white/40 text-sm mt-6">Gratuit pentru nunți cu până la 50 invitați</p>
+          <p className="text-white/40 text-sm mt-6">Gratuit pentru evenimente cu până la 50 de invitați</p>
         </div>
 
         {/* Scroll indicator */}
@@ -379,7 +379,7 @@ export default async function LandingPage() {
               <p className="font-[family-name:var(--font-playfair)] text-xl font-semibold text-gray-900">
                 Tot ce ai nevoie, într-un singur loc.
               </p>
-              <p className="text-gray-400 text-sm mt-1">Gratuit pentru nunți cu până la 50 de invitați.</p>
+              <p className="text-gray-400 text-sm mt-1">Gratuit pentru evenimente cu până la 50 de invitați.</p>
             </div>
             <Link href="/register" className="shrink-0">
               <Button className="bg-rose-600 hover:bg-rose-700 rounded-full px-8 font-semibold">
@@ -437,7 +437,7 @@ export default async function LandingPage() {
               {
                 name: 'Gratuit', price: '0', period: 'pentru totdeauna',
                 desc: 'Perfect pentru a testa',
-                features: ['1 eveniment, 50 invitați, 10 mese', 'Link RSVP public', 'Import & Export CSV', 'Statistici porții & mărturii', 'Plan mese vizual'],
+                features: ['1 eveniment, 50 de invitați, 10 mese', 'Link RSVP public', 'Import & Export CSV', 'Statistici porții & mărturii', 'Plan mese vizual'],
                 cta: 'Începe gratuit', href: '/register', highlight: false,
               },
               {

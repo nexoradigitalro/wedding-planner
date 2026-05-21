@@ -53,21 +53,43 @@ export default async function TodosPage({ params }: Props) {
 
   if (profile.plan_tier === 'basic') {
     return (
-      <div className="max-w-md mx-auto py-12 text-center space-y-5">
-        <div className="text-5xl">✅</div>
-        <h2 className="font-[family-name:var(--font-playfair)] text-2xl font-bold text-gray-900">
-          Wedding Planner To-Do
-        </h2>
-        <p className="text-gray-500 text-sm leading-relaxed">
-          O listă de sarcini gândită special pentru nunți — de la florărie la DJ, totul organizat pe categorii cu termene și progres vizibil.
-          Disponibil în planul <strong>Pro</strong>.
-        </p>
-        <Link href="/upgrade?autostart=pro">
-          <Button className="bg-rose-600 hover:bg-rose-700 px-8">
-            Activează Pro — 109 RON
-          </Button>
-        </Link>
-        <p className="text-xs text-gray-400">O singură plată · Fără abonament</p>
+      <div className="max-w-lg mx-auto py-10 space-y-6">
+        <div className="rounded-2xl border border-stone-800 bg-gradient-to-br from-stone-950 to-stone-900 flex flex-col p-8 space-y-5">
+          <span className="inline-block text-xs font-bold bg-rose-600 text-white px-3 py-1 rounded-full w-fit">Exclusiv Pro</span>
+          <div>
+            <h3 className="font-[family-name:var(--font-playfair)] text-xl font-bold text-white">Wedding Planner To-Do</h3>
+            <p className="text-stone-400 text-sm mt-2 leading-relaxed">O listă de sarcini gândită special pentru nunți. De la florărie la DJ — totul organizat pe categorii, cu termene și progres vizibil.</p>
+          </div>
+          <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-stone-400">4 din 26 sarcini rezolvate</span>
+              <span className="text-rose-400 font-bold text-sm">15%</span>
+            </div>
+            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-3">
+              <div className="h-full w-[15%] bg-gradient-to-r from-rose-400 to-rose-600 rounded-full" />
+            </div>
+            {[
+              { done: true, label: 'Vizitat locația' },
+              { done: true, label: 'Contract fotograf semnat' },
+              { done: false, label: 'Degustare meniu' },
+              { done: false, label: 'Vorbit cu DJ' },
+              { done: false, label: 'Confirmare buchet mireasă' },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2.5">
+                <div className={`w-4 h-4 rounded-full shrink-0 flex items-center justify-center ${item.done ? 'bg-green-500' : 'border border-white/20'}`}>
+                  {item.done && <span className="text-white text-[9px] font-bold">✓</span>}
+                </div>
+                <span className={`text-xs truncate ${item.done ? 'line-through text-stone-500' : 'text-stone-300'}`}>{item.label}</span>
+              </div>
+            ))}
+          </div>
+          <Link href="/upgrade?autostart=pro">
+            <Button className="bg-rose-600 hover:bg-rose-700 rounded-full font-semibold text-sm px-6 w-full">
+              Activează Pro — 109 RON
+            </Button>
+          </Link>
+          <p className="text-xs text-stone-500 text-center -mt-2">O singură plată · Fără abonament</p>
+        </div>
       </div>
     )
   }
