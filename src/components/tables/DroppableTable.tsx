@@ -120,23 +120,24 @@ function DraggableChair({
   )
 }
 
-function NameLabel({ x, y, name, isMain }: { x: number; y: number; name: string; isMain: boolean }) {
+function NameLabel({ x, y, name, isMain, category }: { x: number; y: number; name: string; isMain: boolean; category?: string }) {
+  const col = category ? CATEGORY_COLORS[category] : null
   return (
     <div style={{
       position: 'absolute',
       left: x, top: y,
       transform: 'translate(-50%, -50%)',
-      fontSize: 7.5,
+      fontSize: 10,
       fontWeight: isMain ? 700 : 500,
-      color: isMain ? '#1e293b' : '#64748b',
+      color: col ? col.text : (isMain ? '#1e293b' : '#64748b'),
       whiteSpace: 'nowrap',
       pointerEvents: 'none',
-      background: 'rgba(255,255,255,0.92)',
-      borderRadius: 3,
-      padding: '1px 3px',
+      background: col ? col.bg : 'rgba(255,255,255,0.95)',
+      borderRadius: 4,
+      padding: '2px 5px',
       zIndex: 10,
       lineHeight: 1.3,
-      border: isMain ? 'none' : '1px dashed #cbd5e1',
+      border: `1px solid ${col ? col.border : (isMain ? '#e2e8f0' : '#cbd5e1')}`,
     }}>
       {name}
     </div>
@@ -144,7 +145,7 @@ function NameLabel({ x, y, name, isMain }: { x: number; y: number; name: string;
 }
 
 function TableCenter({ title, occupied, capacity, radius }: { title: string; occupied: number; capacity: number; radius: number }) {
-  const fontSize = Math.max(8, Math.min(11, radius / 6))
+  const fontSize = Math.max(12, Math.min(16, radius / 4.5))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '0 6px' }}>
       <div style={{
@@ -188,11 +189,12 @@ function RoundTableVisual({ title, guests, capacity, canEdit }: { title: string;
         const nly = center + nameLabelR * Math.sin(angle)
         const name = entry.kind === 'main' ? entry.guest.name
           : entry.kind === 'plus_one' ? (entry.guest.plus_one_name || 'Însoțitor') : null
+        const category = entry.kind !== 'empty' ? entry.guest.category : undefined
 
         return (
           <React.Fragment key={i}>
             <DraggableChair entry={entry} idx={i} chairSize={chairSize} x={cx} y={cy} rotDeg={rotDeg} canEdit={canEdit} />
-            {name && <NameLabel x={nlx} y={nly} name={name} isMain={entry.kind === 'main'} />}
+            {name && <NameLabel x={nlx} y={nly} name={name} isMain={entry.kind === 'main'} category={category} />}
           </React.Fragment>
         )
       })}
@@ -235,10 +237,11 @@ function RectTableVisual({ title, guests, capacity, canEdit }: { title: string; 
       const x = i * (slotW + gap) + slotW / 2
       const name = entry.kind === 'main' ? entry.guest.name
         : entry.kind === 'plus_one' ? (entry.guest.plus_one_name || 'Însoțitor') : null
+      const category = entry.kind !== 'empty' ? entry.guest.category : undefined
       return (
         <React.Fragment key={`${startIdx + i}`}>
           <DraggableChair entry={entry} idx={startIdx + i} chairSize={chairSize} x={x} y={rowY} rotDeg={rotDeg} canEdit={canEdit} />
-          {name && <NameLabel x={x} y={rowY + labelYOffset} name={name} isMain={entry.kind === 'main'} />}
+          {name && <NameLabel x={x} y={rowY + labelYOffset} name={name} isMain={entry.kind === 'main'} category={category} />}
         </React.Fragment>
       )
     })
@@ -323,6 +326,7 @@ function HeadTableVisual({ title, guests, capacity, canEdit }: { title: string; 
         const x = 12 + i * (slotW + gap) + slotW / 2
         const name = entry.kind === 'main' ? entry.guest.name
           : entry.kind === 'plus_one' ? (entry.guest.plus_one_name || 'Însoțitor') : null
+        const category = entry.kind !== 'empty' ? entry.guest.category : undefined
         return (
           <React.Fragment key={i}>
             <DraggableChair
@@ -337,6 +341,7 @@ function HeadTableVisual({ title, guests, capacity, canEdit }: { title: string; 
                 y={chairRowY + chairSize / 2 + nameLabelH / 2 + 2}
                 name={name}
                 isMain={entry.kind === 'main'}
+                category={category}
               />
             )}
           </React.Fragment>

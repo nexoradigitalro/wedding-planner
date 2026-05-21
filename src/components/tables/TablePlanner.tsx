@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   DndContext, DragEndEvent, DragOverlay, DragStartEvent,
   PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
@@ -93,6 +93,29 @@ export default function TablePlanner({
 
   const [zoom, setZoom] = useState(1)
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [highlightCategory, setHighlightCategory] = useState<string | null>(null)
+
+  const searchResult = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return null
+    for (const t of tables) {
+      const g = t.guests.find(g =>
+        g.name.toLowerCase().includes(q) || (g.plus_one_name?.toLowerCase().includes(q))
+      )
+      if (g) return { guest: g, tableName: t.name }
+    }
+    const g = unassigned.find(g => g.name.toLowerCase().includes(q))
+    if (g) return { guest: g, tableName: null }
+    return undefined
+  }, [searchQuery, tables, unassigned])
+
+  const CATEGORY_LABELS: Record<string, { label: string; color: string; ring: string }> = {
+    family:    { label: 'Familie',  color: 'bg-purple-100 text-purple-700 border-purple-300', ring: '#c4b5fd' },
+    friends:   { label: 'Prieteni', color: 'bg-blue-100 text-blue-700 border-blue-300',       ring: '#93c5fd' },
+    coworkers: { label: 'Colegi',   color: 'bg-orange-100 text-orange-700 border-orange-300', ring: '#fdba74' },
+    kids:      { label: 'Copii',    color: 'bg-pink-100 text-pink-700 border-pink-300',        ring: '#f9a8d4' },
+  }
   const canvasDragRef = useRef<CanvasDrag | null>(null)
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   // Refs for stable access inside window event listeners
@@ -399,7 +422,8 @@ export default function TablePlanner({
   return (
     <div className="flex flex-col gap-3 md:h-[calc(100vh-180px)]">
       {/* Toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-3 bg-white rounded-xl px-4 py-2.5 border border-stone-200 shadow-sm flex-shrink-0">
+      <div className="flex flex-col gap-2 bg-white rounded-xl px-4 py-2.5 border border-stone-200 shadow-sm flex-shrink-0">
+        <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>🪑 {occupiedSeats}/{totalSeats} locuri ocupate</span>
           <span>👥 {unassignedCount} neasignați</span>
@@ -443,6 +467,48 @@ export default function TablePlanner({
             )}
           </div>
         )}
+        </div>
+        {/* Search + category filter */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Caută invitat..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="h-8 text-xs rounded-lg border border-stone-200 px-3 pr-8 outline-none focus:border-rose-400 w-44"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-xs">✕</button>
+            )}
+          </div>
+          {searchQuery && (
+            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+              searchResult === undefined ? 'bg-red-50 text-red-500' :
+              searchResult?.tableName ? 'bg-green-50 text-green-700 border border-green-200' :
+              'bg-amber-50 text-amber-600 border border-amber-200'
+            }`}>
+              {searchResult === undefined ? 'Negăsit' :
+               searchResult?.tableName ? `→ ${searchResult.tableName}` :
+               '→ Neasignat'}
+            </span>
+          )}
+          <div className="h-4 w-px bg-stone-200 mx-1" />
+          {Object.entries(CATEGORY_LABELS).map(([cat, cfg]) => (
+            <button
+              key={cat}
+              onClick={() => setHighlightCategory(h => h === cat ? null : cat)}
+              className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-all ${
+                highlightCategory === cat ? cfg.color + ' shadow-sm' : 'bg-white text-gray-400 border-stone-200 hover:border-stone-300'
+              }`}
+            >
+              {cfg.label}
+            </button>
+          ))}
+          {highlightCategory && (
+            <button onClick={() => setHighlightCategory(null)} className="text-xs text-gray-400 hover:text-gray-700">✕ Resetează</button>
+          )}
+        </div>
       </div>
 
       {/* Mobile list view */}
@@ -450,43 +516,75 @@ export default function TablePlanner({
         {unassigned.length > 0 && (
           <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Neasignați ({unassigned.length})</p>
-            <div className="flex flex-wrap gap-2">
-              {unassigned.map((g) => (
-                <span key={g.id} className="text-xs bg-white border border-stone-200 rounded-full px-3 py-1 text-gray-700">
-                  {g.name}{g.has_plus_one ? ' +1' : ''}
-                </span>
-              ))}
+            <div className="space-y-2">
+              {unassigned.map((g) => {
+                const catCfg = CATEGORY_LABELS[g.category]
+                return (
+                  <div key={g.id} className="flex items-center justify-between gap-2 bg-white border border-stone-200 rounded-xl px-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${catCfg?.color ?? 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+                        {catCfg?.label ?? g.category}
+                      </span>
+                      <span className="text-sm font-medium text-gray-800 truncate">{g.name}{g.has_plus_one ? ` +1` : ''}</span>
+                    </div>
+                    {canEdit && (
+                      <select
+                        className="text-xs border border-stone-200 rounded-lg px-2 py-1 outline-none focus:border-rose-400 shrink-0"
+                        defaultValue=""
+                        onChange={async (e) => {
+                          const tableId = e.target.value || null
+                          await supabase.from('guests').update({ table_id: tableId }).eq('id', g.id)
+                          setUnassigned(prev => prev.filter(x => x.id !== g.id))
+                          if (tableId) setTables(prev => prev.map(t => t.id === tableId ? { ...t, guests: [...t.guests, { ...g, table_id: tableId }] } : t))
+                        }}
+                      >
+                        <option value="">Asignează...</option>
+                        {tables.map(t => {
+                          const occ = t.guests.reduce((s, x) => s + 1 + (x.has_plus_one ? 1 : 0), 0)
+                          return <option key={t.id} value={t.id} disabled={occ >= t.capacity}>{t.name} ({occ}/{t.capacity})</option>
+                        })}
+                      </select>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
-        {tables.map((table) => (
-          <div key={table.id} className="rounded-xl border border-stone-200 bg-white p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-semibold text-gray-900">{table.name}</p>
-              <span className="text-xs text-gray-400">
-                {table.guests.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)}/{table.capacity} locuri
-              </span>
-            </div>
-            {table.guests.length === 0 ? (
-              <p className="text-xs text-gray-400">Niciun invitat asignat</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {table.guests.map((g) => (
-                  <span key={g.id} className="text-xs bg-rose-50 border border-rose-100 text-rose-700 rounded-full px-3 py-1">
-                    {g.name}{g.has_plus_one ? ` + ${g.plus_one_name ?? 'însoțitor'}` : ''}
-                  </span>
-                ))}
+        {tables.map((table) => {
+          const occ = table.guests.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
+          return (
+            <div key={table.id} className="rounded-xl border border-stone-200 bg-white p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-semibold text-gray-900">{table.name}</p>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${occ >= table.capacity ? 'bg-red-50 text-red-500' : 'bg-stone-100 text-gray-500'}`}>
+                  {occ}/{table.capacity} locuri
+                </span>
               </div>
-            )}
-          </div>
-        ))}
+              {table.guests.length === 0 ? (
+                <p className="text-xs text-gray-400">Niciun invitat asignat</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {table.guests.map((g) => {
+                    const catCfg = CATEGORY_LABELS[g.category]
+                    return (
+                      <span key={g.id} className={`text-xs rounded-full px-2.5 py-1 border font-medium ${catCfg?.color ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                        {g.name}{g.has_plus_one ? ` +1` : ''}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
         {tables.length === 0 && (
           <div className="rounded-xl border-2 border-dashed border-stone-300 p-10 text-center">
             <p className="text-gray-400 text-sm">Nicio masă adăugată încă.</p>
           </div>
         )}
         <p className="text-xs text-center text-gray-400 pb-2">
-          Planul drag & drop este disponibil pe desktop. Pe mobil poți vizualiza asignările.
+          Drag & drop disponibil pe desktop. Pe mobil poți asigna invitații la mese din lista de sus.
         </p>
       </div>
 
@@ -593,6 +691,8 @@ export default function TablePlanner({
               {tables.map(table => {
                 const pos = positions[table.id] ?? { x: 80, y: 80 }
                 const isDragging = draggingId === table.id
+                const hasHighlightedCat = highlightCategory ? table.guests.some(g => g.category === highlightCategory) : false
+                const ringColor = highlightCategory ? CATEGORY_LABELS[highlightCategory]?.ring : undefined
                 return (
                   <div
                     key={table.id}
@@ -600,6 +700,10 @@ export default function TablePlanner({
                       position: 'absolute', left: pos.x, top: pos.y,
                       zIndex: isDragging ? 20 : 3,
                       filter: isDragging ? 'drop-shadow(0 8px 20px rgba(0,0,0,0.2))' : undefined,
+                      opacity: highlightCategory && !hasHighlightedCat ? 0.3 : 1,
+                      transition: 'opacity 0.2s',
+                      borderRadius: 16,
+                      boxShadow: highlightCategory && hasHighlightedCat ? `0 0 0 4px ${ringColor}, 0 0 20px ${ringColor}88` : undefined,
                     }}
                   >
                     {canEdit && (
