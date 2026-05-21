@@ -200,11 +200,18 @@ export default function TablePlanner({
       const fullP = table.guests.length + table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'full').length
       const halfP = table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'half').length
       const noneP = table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'none').length
-      const portionStr = [
-        fullP > 0 ? `${fullP}i` : null,
-        halfP > 0 ? `${halfP}c` : null,
-        noneP > 0 ? `${noneP}f` : null,
-      ].filter(Boolean).join(' · ')
+      const portionLines: string[] = [
+        fullP > 0 ? `${fullP} intregi` : '',
+        halfP > 0 ? `${halfP} copil` : '',
+        noneP > 0 ? `${noneP} fara meniu` : '',
+      ].filter(Boolean)
+
+      function drawPortions(cx2: number, startY: number) {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(5.5)
+        doc.setTextColor(50, 30, 10)
+        portionLines.forEach((line, i) => doc.text(ps(line), cx2, startY + i * 4.2, { align: 'center' }))
+      }
 
       if (table.shape === 'round') {
         const r = 13
@@ -213,52 +220,60 @@ export default function TablePlanner({
         doc.setDrawColor(120, 80, 40)
         doc.setLineWidth(0.5)
         doc.circle(tx, ty, r, 'FD')
+        // Name
         doc.setFont('helvetica', 'bold')
-        doc.setFontSize(6)
+        doc.setFontSize(6.5)
         doc.setTextColor(40, 20, 5)
         const nameLines = doc.splitTextToSize(ps(table.name), r * 1.6) as string[]
-        nameLines.forEach((ln, i) => doc.text(ln, tx, ty - 1 + (i - (nameLines.length - 1) / 2) * 3.2, { align: 'center' }))
+        const nameH = nameLines.length * 3.5
+        nameLines.forEach((ln, i) => doc.text(ln, tx, ty - nameH / 2 + 2 + i * 3.5, { align: 'center' }))
+        // Seat count inside, below name
         doc.setFont('helvetica', 'normal')
-        doc.setFontSize(4.8)
-        doc.setTextColor(80, 60, 40)
-        doc.text(`${occ}/${table.capacity}`, tx, ty + r + 3.5, { align: 'center' })
-        if (portionStr) doc.text(ps(portionStr), tx, ty + r + 7, { align: 'center' })
+        doc.setFontSize(4.5)
+        doc.setTextColor(110, 80, 50)
+        doc.text(`${occ}/${table.capacity} locuri`, tx, ty - nameH / 2 + 2 + nameH + 2.5, { align: 'center' })
+        // Portions below circle
+        if (portionLines.length > 0) drawPortions(tx, ty + r + 4.5)
 
       } else if (table.shape === 'rectangular') {
         const w = 28, h = 18
-        const tx = cx(pos.x), ty = cy(pos.y)
+        const tx = cx(pos.x), ty2 = cy(pos.y), cx2 = tx + w / 2
         doc.setFillColor(255, 253, 248)
         doc.setDrawColor(120, 80, 40)
         doc.setLineWidth(0.5)
-        doc.roundedRect(tx, ty, w, h, 1.5, 1.5, 'FD')
+        doc.roundedRect(tx, ty2, w, h, 1.5, 1.5, 'FD')
+        // Name
         doc.setFont('helvetica', 'bold')
-        doc.setFontSize(6)
+        doc.setFontSize(6.5)
         doc.setTextColor(40, 20, 5)
         const nameLines = doc.splitTextToSize(ps(table.name), w - 3) as string[]
-        nameLines.forEach((ln, i) => doc.text(ln, tx + w / 2, ty + h / 2 - 1 + (i - (nameLines.length - 1) / 2) * 3.2, { align: 'center' }))
+        const nameH = nameLines.length * 3.5
+        nameLines.forEach((ln, i) => doc.text(ln, cx2, ty2 + h / 2 - nameH / 2 + 2 + i * 3.5, { align: 'center' }))
+        // Seat count
         doc.setFont('helvetica', 'normal')
-        doc.setFontSize(4.8)
-        doc.setTextColor(80, 60, 40)
-        doc.text(`${occ}/${table.capacity}`, tx + w / 2, ty + h + 3.5, { align: 'center' })
-        if (portionStr) doc.text(ps(portionStr), tx + w / 2, ty + h + 7, { align: 'center' })
+        doc.setFontSize(4.5)
+        doc.setTextColor(110, 80, 50)
+        doc.text(`${occ}/${table.capacity} locuri`, cx2, ty2 + h / 2 - nameH / 2 + 2 + nameH + 2.5, { align: 'center' })
+        // Portions below
+        if (portionLines.length > 0) drawPortions(cx2, ty2 + h + 4.5)
 
       } else {
         // head table
         const w = 50, h = 13
-        const tx = cx(pos.x), ty = cy(pos.y)
+        const tx = cx(pos.x), ty2 = cy(pos.y), cx2 = tx + w / 2
         doc.setFillColor(255, 248, 220)
         doc.setDrawColor(180, 130, 30)
         doc.setLineWidth(0.7)
-        doc.roundedRect(tx, ty, w, h, 1.5, 1.5, 'FD')
+        doc.roundedRect(tx, ty2, w, h, 1.5, 1.5, 'FD')
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(6.5)
         doc.setTextColor(100, 60, 0)
-        doc.text(ps(table.name), tx + w / 2, ty + h / 2 + 2, { align: 'center' })
+        doc.text(ps(table.name), cx2, ty2 + h / 2 + 2, { align: 'center' })
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(4.8)
         doc.setTextColor(80, 60, 40)
-        const summary = [`${occ}/${table.capacity}`, portionStr].filter(Boolean).join(' · ')
-        doc.text(ps(summary), tx + w / 2, ty + h + 3.5, { align: 'center' })
+        doc.text(`${occ}/${table.capacity} locuri`, cx2, ty2 + h + 4, { align: 'center' })
+        if (portionLines.length > 0) drawPortions(cx2, ty2 + h + 8.5)
       }
     }
 
@@ -267,12 +282,6 @@ export default function TablePlanner({
     doc.setFontSize(9)
     doc.setTextColor(60, 35, 15)
     doc.text(ps(eventName || 'Plan sala'), mg, mg + 6)
-
-    // Legend: i=intregi c=copii f=fara meniu
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(6)
-    doc.setTextColor(120, 90, 60)
-    doc.text('i = portie intreaga  ·  c = portie copil  ·  f = fara meniu', pageW - mg, mg + 6, { align: 'right' })
 
     // Footer
     const totOcc = tables.reduce((s, t) => s + t.guests.reduce((a, g) => a + 1 + (g.has_plus_one ? 1 : 0), 0), 0)
