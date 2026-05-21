@@ -437,7 +437,7 @@ export default async function LandingPage() {
               {
                 name: 'Gratuit', price: '0', period: 'pentru totdeauna',
                 desc: 'Perfect pentru a testa',
-                features: ['1 eveniment, 50 de invitați, 10 mese', 'Link RSVP public', 'Import & Export CSV', 'Statistici porții & mărturii', 'Plan mese vizual'],
+                features: ['1 eveniment, 50 de invitați, 10 mese', 'Link RSVP public', 'Import & Export CSV', 'Statistici porții & mărturii', 'Plan mese vizual', '💰 Buget & Costuri'],
                 cta: 'Începe gratuit', href: '/register', highlight: false,
               },
               {
