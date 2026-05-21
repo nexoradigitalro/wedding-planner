@@ -44,11 +44,11 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxGuests: 230,
     maxTables: null,
     maxEvents: 1,
-    maxCollaborators: 0,
+    maxCollaborators: 1,
     pdfExport: false,
     qrCheckin: false,
     activityFeed: true,
-    giftCalculator: true,
+    giftCalculator: false,
   },
   pro: {
     maxGuests: null,

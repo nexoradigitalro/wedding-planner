@@ -443,7 +443,7 @@ export default async function LandingPage() {
               {
                 name: 'Basic', price: '79', period: 'o singură dată',
                 desc: 'Tot ce ai nevoie pentru nunta ta',
-                features: ['1 eveniment, până la 230 invitați', 'Mese nelimitate', 'Link RSVP public', 'Import & Export CSV', 'Statistici porții & mărturii', 'Plan mese vizual', '2 colaboratori', 'Feed activitate live', '🎁 Calculator Cinste', '💰 Buget & Costuri'],
+                features: ['1 eveniment, până la 230 invitați', 'Mese nelimitate', 'Link RSVP public', 'Import & Export CSV', 'Statistici porții & mărturii', 'Plan mese vizual', '1 colaborator', 'Feed activitate live', '💰 Buget & Costuri'],
                 cta: 'Alege Basic', href: '/register?plan=basic', highlight: false,
               },
               {
