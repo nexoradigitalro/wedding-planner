@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import EventTabs from '@/components/layout/EventTabs'
+import { isPlanActive } from '@/lib/utils'
+import type { PlanTier } from '@/types'
 
 interface Props {
   children: React.ReactNode
@@ -23,13 +25,14 @@ export default async function EventLayout({ children, params }: Props) {
 
   const [{ data: member }, { data: profile }] = await Promise.all([
     supabase.from('event_members').select('role').eq('event_id', id).eq('user_id', user.id).single(),
-    supabase.from('profiles').select('plan_tier').eq('id', user.id).single(),
+    supabase.from('profiles').select('plan_tier, plan_expires_at').eq('id', user.id).single(),
   ])
 
   if (!member && event.owner_id !== user.id) redirect('/dashboard')
 
   const role = member?.role ?? 'viewer'
-  const planTier = profile?.plan_tier ?? 'free'
+  const rawTier = (profile?.plan_tier ?? 'free') as PlanTier
+  const planTier = isPlanActive(rawTier, profile?.plan_expires_at ?? null) ? rawTier : 'free'
 
   return (
     <div className="space-y-4">

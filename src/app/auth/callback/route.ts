@@ -30,6 +30,11 @@ export async function GET(request: Request) {
         full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
         avatar_url: user.user_metadata?.avatar_url ?? null,
       }, { onConflict: 'id' })
+      // Ensure plan_tier defaults to 'free' for new profiles
+      await supabase.from('profiles')
+        .update({ plan_tier: 'free' })
+        .eq('id', user.id)
+        .is('plan_tier', null)
     }
     if (plan === 'basic' || plan === 'pro') {
       return NextResponse.redirect(`${origin}/upgrade?autostart=${plan}`)

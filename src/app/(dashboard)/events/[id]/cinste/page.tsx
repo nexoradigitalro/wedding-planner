@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import GiftCalculator from '@/components/gifts/GiftCalculator'
 import { PLAN_LIMITS } from '@/types'
+import { isPlanActive } from '@/lib/utils'
+import type { PlanTier } from '@/types'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -17,11 +19,13 @@ export default async function CinstePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('plan_tier')
+    .select('plan_tier, plan_expires_at')
     .eq('id', user.id)
     .single()
 
-  const limits = PLAN_LIMITS[profile?.plan_tier ?? 'free']
+  const rawTier = (profile?.plan_tier ?? 'free') as PlanTier
+  const planTier = isPlanActive(rawTier, profile?.plan_expires_at ?? null) ? rawTier : 'free'
+  const limits = PLAN_LIMITS[planTier]
 
   if (!limits.giftCalculator) {
     return (

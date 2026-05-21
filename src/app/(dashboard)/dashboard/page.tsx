@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { formatDate } from '@/lib/utils'
+import { formatDate, isPlanActive } from '@/lib/utils'
+import type { PlanTier } from '@/types'
 import CreateEventDialog from '@/components/shared/CreateEventDialog'
 import UpgradeBanner from '@/components/shared/UpgradeBanner'
 
@@ -33,10 +34,12 @@ export default async function DashboardPage({ searchParams }: Props) {
     .single()
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'bun venit'
+  const rawTier = (planTier) as PlanTier
+  const planTier = isPlanActive(rawTier, profile?.plan_expires_at ?? null) ? rawTier : 'free'
 
   return (
     <div className="space-y-8">
-      {upgraded === 'true' && <UpgradeBanner tier={profile?.plan_tier ?? 'basic'} />}
+      {upgraded === 'true' && <UpgradeBanner tier={planTier} />}
 
       {/* Header */}
       <div className="flex items-end justify-between gap-4">
@@ -48,7 +51,7 @@ export default async function DashboardPage({ searchParams }: Props) {
             Bună, <span className="italic font-normal text-rose-600">{firstName}</span>
           </h1>
         </div>
-        <CreateEventDialog planTier={profile?.plan_tier ?? 'free'} eventCount={events?.length ?? 0} />
+        <CreateEventDialog planTier={planTier} eventCount={events?.length ?? 0} />
       </div>
 
       {/* Empty state — onboarding */}
@@ -71,7 +74,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                   Creează primul eveniment și ești gata în câteva minute.
                 </p>
               </div>
-              <CreateEventDialog planTier={profile?.plan_tier ?? 'free'} eventCount={0} />
+              <CreateEventDialog planTier={planTier} eventCount={0} />
             </div>
           </div>
 
@@ -136,7 +139,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                 return acc + rows.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
               }, 0) },
               { label: 'Colaboratori', value: events.reduce((acc, e) => acc + ((e.members as unknown as { count: number }[])?.[0]?.count ?? 0), 0) },
-              { label: 'Plan', value: profile?.plan_tier === 'pro' ? 'Pro' : profile?.plan_tier === 'basic' ? 'Basic' : 'Gratuit' },
+              { label: 'Plan', value: planTier === 'pro' ? 'Pro' : planTier === 'basic' ? 'Basic' : 'Gratuit' },
             ].map((s) => (
               <div key={s.label} className="bg-white rounded-2xl border border-stone-200 px-5 py-4 shadow-sm">
                 <p className="text-2xl font-[family-name:var(--font-playfair)] font-bold text-gray-900">{s.value}</p>
