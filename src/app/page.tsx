@@ -13,7 +13,7 @@ export default async function LandingPage() {
       <nav className="absolute top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <span className="text-white font-[family-name:var(--font-playfair)] text-2xl font-semibold tracking-wide">
-            Nunta <span className="italic font-normal">Mea</span>
+            Planner <span className="italic font-normal">Nuntă</span>
           </span>
           <div className="hidden md:flex items-center gap-8 text-white/80 text-sm font-medium">
             <a href="#features" className="hover:text-white transition-colors">Ce include</a>
@@ -533,7 +533,7 @@ export default async function LandingPage() {
           <div className="flex flex-col md:flex-row items-start justify-between gap-10 pb-10 border-b border-white/10">
             <div>
               <p className="font-[family-name:var(--font-playfair)] text-2xl font-semibold mb-2">
-                Nunta <span className="italic font-normal">Mea</span>
+                Planner <span className="italic font-normal">Nuntă</span>
               </p>
               <p className="text-gray-400 text-sm max-w-xs leading-relaxed">
                 Cel mai simplu și modern organizator de nuntă din România.

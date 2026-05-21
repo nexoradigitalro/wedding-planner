@@ -55,7 +55,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-rose-900/50" />
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <Link href="/" className="font-[family-name:var(--font-playfair)] text-2xl font-semibold text-white tracking-wide">
-            Nunta <span className="italic font-normal text-rose-300">Mea</span>
+            Planner <span className="italic font-normal text-rose-300">Nuntă</span>
           </Link>
           <div className="space-y-4">
             <blockquote className="font-[family-name:var(--font-playfair)] text-3xl font-bold text-white leading-snug">
@@ -71,7 +71,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-white">
         {/* Mobile logo */}
         <Link href="/" className="lg:hidden font-[family-name:var(--font-playfair)] text-2xl font-semibold text-gray-900 mb-10">
-          Nunta <span className="italic font-normal text-rose-600">Mea</span>
+          Planner <span className="italic font-normal text-rose-600">Nuntă</span>
         </Link>
 
         <div className="w-full max-w-sm space-y-8">
