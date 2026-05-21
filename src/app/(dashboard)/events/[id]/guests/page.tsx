@@ -12,6 +12,12 @@ export default async function GuestsPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: event } = await supabase
+    .from('events')
+    .select('name')
+    .eq('id', id)
+    .single()
+
   const { data: guests } = await supabase
     .from('guests')
     .select('*, table:tables(id, name)')
@@ -48,6 +54,7 @@ export default async function GuestsPage({ params }: Props) {
       tables={tables ?? []}
       canEdit={canEdit}
       planTier={profile?.plan_tier ?? 'free'}
+      eventName={event?.name ?? ''}
     />
   )
 }

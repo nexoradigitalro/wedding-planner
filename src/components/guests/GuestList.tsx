@@ -27,6 +27,7 @@ interface Props {
   tables: { id: string; name: string; capacity: number }[]
   canEdit: boolean
   planTier: string
+  eventName?: string
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -67,7 +68,7 @@ const emptyGuest = {
   dietary: '', notes: '',
 }
 
-export default function GuestList({ eventId, userId, initialGuests, tables, canEdit, planTier }: Props) {
+export default function GuestList({ eventId, userId, initialGuests, tables, canEdit, planTier, eventName }: Props) {
   const [guests, setGuests] = useState<Guest[]>(initialGuests)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
@@ -89,6 +90,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
   const atGuestLimit = limits.maxGuests !== null && guests.length >= limits.maxGuests
   const nearGuestLimit = !atGuestLimit && limits.maxGuests !== null && guests.length >= Math.floor(limits.maxGuests * 0.8)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [entranceOpen, setEntranceOpen] = useState(false)
 
   useEffect(() => {
     const channel = supabase
@@ -186,6 +188,101 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       action: 'guest_removed', payload: { guest_name: guest.name },
     })
     toast.success(`${guest.name} șters`)
+  }
+
+  async function handleEntranceListExport(sortBy: 'alpha' | 'table') {
+    const { default: jsPDF } = await import('jspdf')
+    const { default: autoTable } = await import('jspdf-autotable')
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageW = doc.internal.pageSize.width
+    const pageH = doc.internal.pageSize.height
+
+    // Header bar
+    doc.setFillColor(225, 29, 72)
+    doc.rect(0, 0, pageW, 22, 'F')
+    doc.setFontSize(15)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text(pdfSafe(eventName || 'Lista invitatilor'), pageW / 2, 12, { align: 'center' })
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(255, 200, 200)
+    doc.text(
+      pdfSafe(`${guests.length} invitatii · ${sortBy === 'alpha' ? 'Ordine alfabetica' : 'Grupat pe mese'} · ${new Date().toLocaleDateString('ro-RO')}`),
+      pageW / 2, 18, { align: 'center' }
+    )
+    doc.setTextColor(0)
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows: any[] = []
+
+    if (sortBy === 'alpha') {
+      const sorted = [...guests].sort((a, b) => a.name.localeCompare(b.name))
+      sorted.forEach((g, i) => {
+        rows.push([
+          String(i + 1),
+          '',
+          pdfSafe(g.name),
+          pdfSafe(g.has_plus_one ? (g.plus_one_name || '+1') : ''),
+          pdfSafe(tables.find(t => t.id === g.table_id)?.name ?? 'Neasignat'),
+        ])
+      })
+    } else {
+      const grouped = new Map<string, Guest[]>()
+      for (const g of guests) {
+        const key = g.table_id ?? '__none__'
+        if (!grouped.has(key)) grouped.set(key, [])
+        grouped.get(key)!.push(g)
+      }
+      const sortedTables = [...tables].sort((a, b) => a.name.localeCompare(b.name))
+      for (const t of sortedTables) {
+        const tGuests = (grouped.get(t.id) ?? []).sort((a, b) => a.name.localeCompare(b.name))
+        if (tGuests.length === 0) continue
+        rows.push([{ content: pdfSafe(`${t.name}  (${tGuests.length} pers.)`) , colSpan: 5, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', fontSize: 9, textColor: [30, 41, 59], cellPadding: { top: 3, bottom: 3, left: 5, right: 3 } } }])
+        tGuests.forEach(g => rows.push(['', '', pdfSafe(g.name), pdfSafe(g.has_plus_one ? (g.plus_one_name || '+1') : ''), '']))
+      }
+      const unassigned = (grouped.get('__none__') ?? []).sort((a, b) => a.name.localeCompare(b.name))
+      if (unassigned.length > 0) {
+        rows.push([{ content: pdfSafe(`Neasignati (${unassigned.length} pers.)`), colSpan: 5, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', fontSize: 9, textColor: [30, 41, 59], cellPadding: { top: 3, bottom: 3, left: 5, right: 3 } } }])
+        unassigned.forEach(g => rows.push(['', '', pdfSafe(g.name), pdfSafe(g.has_plus_one ? (g.plus_one_name || '+1') : ''), '']))
+      }
+    }
+
+    autoTable(doc, {
+      head: [['#', '', pdfSafe('Invitat'), pdfSafe('Insotitor'), 'Masa']],
+      body: rows,
+      startY: 26,
+      styles: { fontSize: 9, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, valign: 'middle', lineColor: [220, 220, 220], lineWidth: 0.25 },
+      headStyles: { fillColor: [30, 30, 30], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 9, halign: 'center', textColor: [160, 160, 160], fontSize: 8 },
+        1: { cellWidth: 9 },
+        2: { cellWidth: 65 },
+        3: { cellWidth: 52 },
+        4: { cellWidth: 37 },
+      },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      margin: { left: 14, right: 14 },
+      didDrawCell: (data) => {
+        if (data.column.index === 1 && data.section === 'body' && Array.isArray(data.row.raw) && (data.row.raw as string[]).length >= 5) {
+          const { x, y, height, width } = data.cell
+          const size = 3.5
+          doc.setDrawColor(130, 130, 130)
+          doc.setLineWidth(0.35)
+          doc.rect(x + (width - size) / 2, y + (height - size) / 2, size, size)
+        }
+      },
+      didDrawPage: (data) => {
+        doc.setFontSize(7)
+        doc.setTextColor(150, 150, 150)
+        doc.text(`Pagina ${data.pageNumber}`, pageW / 2, pageH - 6, { align: 'center' })
+        doc.text('Nunta Mea', 14, pageH - 6)
+      },
+    })
+
+    doc.save(pdfSafe(`lista-intrare-${(eventName || 'invitatii').toLowerCase().replace(/\s+/g, '-')}.pdf`))
+    toast.success(pdfSafe('Lista de intrare exportata!'))
   }
 
   function handleCsvImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -480,9 +577,14 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
             </Button>
           )}
           {limits.pdfExport && guests.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handlePdfExport}>
-              📄 Export PDF
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={handlePdfExport}>
+                📄 Export PDF
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEntranceOpen(true)}>
+                📋 Listă intrare
+              </Button>
+            </>
           )}
           {canEdit && (
             <>
@@ -656,6 +758,40 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
               {loading ? 'Se salvează...' : editing ? 'Salvează' : 'Adaugă invitat'}
             </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Entrance list export dialog */}
+      <Dialog open={entranceOpen} onOpenChange={setEntranceOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Listă invitați la intrare</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground -mt-1">
+            Se exportă un PDF cu căsuțe de bifat — ideal pentru verificarea la intrare.
+          </p>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <button
+              onClick={() => { setEntranceOpen(false); handleEntranceListExport('alpha') }}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-stone-200 hover:border-rose-300 hover:bg-rose-50 transition-colors text-left"
+            >
+              <span className="text-2xl">🔤</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Alfabetic</p>
+                <p className="text-xs text-gray-400 mt-0.5">Toți invitații A–Z, cu masa alocată</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setEntranceOpen(false); handleEntranceListExport('table') }}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-stone-200 hover:border-rose-300 hover:bg-rose-50 transition-colors text-left"
+            >
+              <span className="text-2xl">🪑</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Pe mese</p>
+                <p className="text-xs text-gray-400 mt-0.5">Grupat per masă — util organizatorului</p>
+              </div>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
 
