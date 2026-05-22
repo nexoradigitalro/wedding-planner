@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
   const { error } = await resend.emails.send({
     from: 'Planner Nuntă <salut@plannernunta.ro>',
-    to: 'nexoradigitalro@gmail.com',
+    to: 'axdigitalro@gmail.com',
     replyTo: email,
     subject: `[Suport] Mesaj de la ${name}`,
     html: `

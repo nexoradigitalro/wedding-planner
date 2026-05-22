@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
+import LandingContactForm from '@/components/shared/LandingContactForm'
 
 export default async function LandingPage() {
   const supabase = await createClient()
@@ -19,6 +20,7 @@ export default async function LandingPage() {
             <a href="#features" className="hover:text-white transition-colors">Ce include</a>
             <a href="#how" className="hover:text-white transition-colors">Cum funcționează</a>
             <a href="#pricing" className="hover:text-white transition-colors">Prețuri</a>
+            <a href="#contact" className="hover:text-white transition-colors">Contact</a>
           </div>
           <div className="flex items-center gap-3">
             {user ? (
@@ -81,6 +83,7 @@ export default async function LandingPage() {
             </a>
           </div>
           <p className="text-white/40 text-sm mt-6">Gratuit pentru evenimente cu până la 50 de invitați</p>
+          <p className="text-white/25 text-xs mt-2">Se recomandă utilizarea variantei desktop pentru o experiență totală</p>
         </div>
 
         {/* Scroll indicator */}
@@ -527,6 +530,20 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ── CONTACT ── */}
+      <section id="contact" className="bg-white py-20 px-4 border-t border-stone-100">
+        <div className="max-w-2xl mx-auto text-center space-y-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-rose-500">Contactează-ne</p>
+          <h2 className="font-[family-name:var(--font-playfair)] text-3xl sm:text-4xl font-bold text-gray-900">
+            Ai întrebări sau nevoie de ajutor?
+          </h2>
+          <p className="text-gray-500 text-base leading-relaxed">
+            Suntem aici pentru tine. Scrie-ne și îți răspundem în cel mai scurt timp posibil.
+          </p>
+          <LandingContactForm />
+        </div>
+      </section>
+
       {/* ── FOOTER ── */}
       <footer className="bg-gray-950 text-white py-16 px-4">
         <div className="max-w-6xl mx-auto">
@@ -544,6 +561,7 @@ export default async function LandingPage() {
               <Link href="/login" className="hover:text-white transition-colors">Autentificare</Link>
               <a href="#features" className="hover:text-white transition-colors">Ce include</a>
               <a href="#pricing" className="hover:text-white transition-colors">Prețuri</a>
+              <a href="#contact" className="hover:text-white transition-colors">Contact</a>
               <Link href="/termeni" className="hover:text-white transition-colors">Termeni și condiții</Link>
               <Link href="/confidentialitate" className="hover:text-white transition-colors">Confidențialitate</Link>
             </div>
