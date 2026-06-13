@@ -15,6 +15,9 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  verification: {
+    google: 'nao0eWOy0-ngoJN13HzCTpBwepvexuUf4VB_RJ1R4gE',
+  },
   title: {
     default: 'Planner Nuntă — Wedding Planner din România',
     template: '%s — Planner Nuntă',
