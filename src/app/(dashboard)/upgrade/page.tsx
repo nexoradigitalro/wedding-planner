@@ -93,12 +93,12 @@ export default function UpgradePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
         {plans.map((p) => (
-          <Card key={p.key} className={`relative border-2 ${p.highlighted ? 'border-rose-500 shadow-xl' : 'border-gray-100'}`}>
+          <Card key={p.key} className={`relative border-2 overflow-visible ${p.highlighted ? 'border-rose-500 shadow-xl' : 'border-gray-100'}`}>
             {p.highlighted && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="bg-rose-600 text-white hover:bg-rose-600">Cel mai popular</Badge>
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                <Badge className="bg-rose-600 text-white hover:bg-rose-600 shadow-md">Cel mai popular</Badge>
               </div>
             )}
             <CardContent className="pt-8 pb-6 space-y-4">
