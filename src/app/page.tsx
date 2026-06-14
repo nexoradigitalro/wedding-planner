@@ -567,7 +567,10 @@ export default async function LandingPage() {
             </div>
           </div>
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-500 text-xs">
-            <p>© 2026 Planner Nuntă · Realizat de Nexora Digital. Toate drepturile rezervate.</p>
+            <div className="space-y-1 text-center sm:text-left">
+              <p>© 2026 Planner Nuntă · Realizat de Nexora Digital. Toate drepturile rezervate.</p>
+              <p className="text-gray-600">SAM PROJECT S.R.L. · CUI: 46030433 · J2022000502018 · Sat Șeușa, Comuna Ciugud, Jud. Alba</p>
+            </div>
             <p>Plată securizată prin Stripe · Fără reînnoire automată</p>
           </div>
         </div>

@@ -25,8 +25,8 @@ export default function TermeniPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Acceptarea termenilor</h2>
             <p>
               Prin accesarea și utilizarea platformei <strong>Planner Nuntă</strong> (disponibilă la plannernunta.ro), operată de
-              Nexora Digital, ești de acord să respecți acești termeni și condiții. Dacă nu ești de acord, te rugăm să nu
-              folosești serviciul.
+              <strong> SAM PROJECT S.R.L.</strong> (CUI: 46030433, J2022000502018, sediu: Sat Șeușa, Comuna Ciugud, Jud. Alba, Strada Lalelelor, Nr. 31),
+              ești de acord să respecți acești termeni și condiții. Dacă nu ești de acord, te rugăm să nu folosești serviciul.
             </p>
           </section>
 
@@ -42,7 +42,7 @@ export default function TermeniPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">3. Conturi și autentificare</h2>
             <p>
               Îți poți crea un cont prin Google OAuth sau email (magic link). Ești responsabil pentru securitatea
-              contului tău. Nu îți partaja datele de acces. Nexora Digital nu poate fi trasă la răspundere pentru
+              contului tău. Nu îți partaja datele de acces. SAM PROJECT S.R.L. nu poate fi trasă la răspundere pentru
               accesul neautorizat cauzat de neglijența utilizatorului.
             </p>
           </section>
