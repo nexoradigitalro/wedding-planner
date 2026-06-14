@@ -58,7 +58,7 @@ export default function UpgradePage() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleUpgrade(plan: 'basic' | 'pro') {
+  async function handleUpgrade(plan: 'basic' | 'pro' | 'test') {
     setLoading(plan)
     try {
       const res = await fetch('/api/upgrade', {
@@ -139,6 +139,14 @@ export default function UpgradePage() {
       <p className="text-center text-xs text-muted-foreground">
         Plată securizată prin Stripe · Revolut Pay acceptat · Nu stocăm datele cardului
       </p>
+
+      {/* Buton test temporar — de șters după verificare */}
+      <div className="text-center pt-4 border-t border-dashed border-stone-200">
+        <p className="text-xs text-gray-400 mb-2">Test plată (intern)</p>
+        <Button variant="outline" size="sm" onClick={() => handleUpgrade('test')} disabled={loading}>
+          Plătește 5 RON test
+        </Button>
+      </div>
     </div>
   )
 }

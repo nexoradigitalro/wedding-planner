@@ -22,4 +22,9 @@ export const PLANS = {
     priceRon: 109,
     priceId: process.env.STRIPE_PRICE_PRO!,
   },
+  test: {
+    name: 'Test',
+    priceRon: 5,
+    priceId: 'price_1Ti7oLD4FPiSMAYOeNPKb6lu',
+  },
 } as const
