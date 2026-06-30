@@ -14,7 +14,6 @@ interface Props {
   canEdit: boolean
   isUnassigned?: boolean
   onDelete?: () => void
-  zoom?: number
 }
 
 const RSVP_RING: Record<string, string> = {
@@ -401,53 +400,7 @@ function DraggableGuestRow({ guest, canEdit }: { guest: Guest; canEdit: boolean 
   )
 }
 
-function CompactTableCard({ title, guests, capacity, isOver }: {
-  title: string; guests: Guest[]; capacity: number; isOver: boolean
-}) {
-  const occupied = guests.reduce((s, g) => s + 1 + (g.companions?.length ?? g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
-  const over = occupied > capacity
-  const allNames: string[] = []
-  for (const g of guests) {
-    allNames.push(g.name)
-    const comps = g.companions?.length > 0
-      ? g.companions.map((c, i) => c.name || `Însoțitor ${i + 1}`)
-      : g.has_plus_one ? [g.plus_one_name || 'Însoțitor 1'] : []
-    allNames.push(...comps)
-  }
-  const shown = allNames.slice(0, 8)
-  const extra = allNames.length - shown.length
-
-  return (
-    <div style={{
-      background: isOver ? '#fff1f2' : 'white',
-      border: `2px solid ${isOver ? '#fda4af' : over ? '#fca5a5' : '#e2e8f0'}`,
-      borderRadius: 10,
-      padding: '7px 10px',
-      minWidth: 150,
-      maxWidth: 200,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.09)',
-      transition: 'border-color 0.15s',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, gap: 6 }}>
-        <span style={{ fontWeight: 700, fontSize: 13, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {title}
-        </span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: over ? '#ef4444' : '#64748b', flexShrink: 0 }}>
-          {over ? `⚠ ${occupied}/${capacity}` : `${occupied}/${capacity}`}
-        </span>
-      </div>
-      <div style={{ fontSize: 10, color: '#475569', lineHeight: 1.5 }}>
-        {shown.map((name, i) => (
-          <div key={i} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
-        ))}
-        {extra > 0 && <div style={{ color: '#94a3b8', fontStyle: 'italic' }}>+{extra} mai mulți</div>}
-        {guests.length === 0 && <div style={{ color: '#cbd5e1', fontStyle: 'italic' }}>Masă goală</div>}
-      </div>
-    </div>
-  )
-}
-
-export default function DroppableTable({ id, title, guests, capacity, shape, canEdit, isUnassigned, onDelete, zoom }: Props) {
+export default function DroppableTable({ id, title, guests, capacity, shape, canEdit, isUnassigned, onDelete }: Props) {
   const { isOver, setNodeRef } = useDroppable({ id })
 
   const occupiedSeats = guests.reduce((s, g) => s + 1 + (g.companions?.length ?? g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
@@ -471,22 +424,6 @@ export default function DroppableTable({ id, title, guests, capacity, shape, can
           )}
           {guests.map((g) => <DraggableGuestRow key={g.id} guest={g} canEdit={canEdit} />)}
         </div>
-      </div>
-    )
-  }
-
-  // Compact card at low zoom — no SVG person icons, just name list
-  const compact = (zoom ?? 1) < 0.55
-  if (compact) {
-    return (
-      <div ref={setNodeRef} style={{ position: 'relative' }}>
-        {onDelete && (
-          <button
-            onClick={onDelete}
-            className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-white border border-stone-300 text-gray-400 hover:text-red-500 flex items-center justify-center text-[9px] shadow-sm"
-          >✕</button>
-        )}
-        <CompactTableCard title={title} guests={guests} capacity={capacity} isOver={isOver} />
       </div>
     )
   }

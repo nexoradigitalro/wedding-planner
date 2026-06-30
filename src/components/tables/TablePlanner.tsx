@@ -20,8 +20,8 @@ import Link from 'next/link'
 const CANVAS_W = 2600
 const CANVAS_H = 1800
 
-// Basket-weave parquet floor SVG — alternating horizontal/vertical plank direction per quadrant
-const FLOOR_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23f2e4cc'/%3E%3Crect x='0' y='0' width='40' height='40' fill='%23ede0c0'/%3E%3Cline x1='0' y1='14' x2='40' y2='14' stroke='%23c09858' stroke-width='.35' opacity='.28'/%3E%3Cline x1='0' y1='27' x2='40' y2='27' stroke='%23c09858' stroke-width='.35' opacity='.28'/%3E%3Crect x='40' y='0' width='40' height='40' fill='%23e4d4b0'/%3E%3Cline x1='54' y1='0' x2='54' y2='40' stroke='%23c09858' stroke-width='.35' opacity='.28'/%3E%3Cline x1='67' y1='0' x2='67' y2='40' stroke='%23c09858' stroke-width='.35' opacity='.28'/%3E%3Crect x='0' y='40' width='40' height='40' fill='%23e4d4b0'/%3E%3Cline x1='14' y1='40' x2='14' y2='80' stroke='%23c09858' stroke-width='.35' opacity='.28'/%3E%3Cline x1='27' y1='40' x2='27' y2='80' stroke='%23c09858' stroke-width='.35' opacity='.28'/%3E%3Crect x='40' y='40' width='40' height='40' fill='%23ede0c0'/%3E%3Cline x1='40' y1='54' x2='80' y2='54' stroke='%23c09858' stroke-width='.35' opacity='.28'/%3E%3Cline x1='40' y1='67' x2='80' y2='67' stroke='%23c09858' stroke-width='.35' opacity='.28'/%3E%3Cline x1='40' y1='0' x2='40' y2='80' stroke='%23a87840' stroke-width='.7' opacity='.3'/%3E%3Cline x1='0' y1='40' x2='80' y2='40' stroke='%23a87840' stroke-width='.7' opacity='.3'/%3E%3C/svg%3E")`
+// Dark elegant marble-stone floor — deep charcoal with subtle gold veining
+const FLOOR_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%230e0c0a'/%3E%3Crect x='0' y='0' width='40' height='40' fill='%23121009'/%3E%3Cline x1='0' y1='14' x2='40' y2='14' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='0' y1='27' x2='40' y2='27' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Crect x='40' y='0' width='40' height='40' fill='%230b0908'/%3E%3Cline x1='54' y1='0' x2='54' y2='40' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='67' y1='0' x2='67' y2='40' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Crect x='0' y='40' width='40' height='40' fill='%230b0908'/%3E%3Cline x1='14' y1='40' x2='14' y2='80' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='27' y1='40' x2='27' y2='80' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Crect x='40' y='40' width='40' height='40' fill='%23121009'/%3E%3Cline x1='40' y1='54' x2='80' y2='54' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='40' y1='67' x2='80' y2='67' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='40' y1='0' x2='40' y2='80' stroke='%23c8a030' stroke-width='.6' opacity='.22'/%3E%3Cline x1='0' y1='40' x2='80' y2='40' stroke='%23c8a030' stroke-width='.6' opacity='.22'/%3E%3C/svg%3E")`
 
 const ELEMENT_DEFS: Record<string, { label: string; emoji: string; w: number; h: number; bg: string; border: string }> = {
   dance_floor: { label: 'Ring de dans',  emoji: '💃', w: 220, h: 160, bg: '#fef9c3', border: '#fde047' },
@@ -829,7 +829,7 @@ export default function TablePlanner({
           </div>
 
           {/* Canvas */}
-          <div ref={canvasContainerRef} className="flex-1 overflow-auto rounded-2xl border border-amber-200 shadow-inner" style={{ backgroundColor: '#e8d5b0' }}>
+          <div ref={canvasContainerRef} className="flex-1 overflow-auto rounded-2xl border border-stone-800 shadow-inner" style={{ backgroundColor: '#080705', backgroundImage: FLOOR_BG, backgroundSize: '80px 80px' }}>
             {/* Size proxy: gives the scroll container the correct scaled dimensions */}
             <div style={{ width: CANVAS_W * zoom, height: CANVAS_H * zoom, position: 'relative', flexShrink: 0 }}>
             <div
@@ -838,10 +838,10 @@ export default function TablePlanner({
                 width: CANVAS_W, height: CANVAS_H,
                 transformOrigin: 'top left',
                 transform: `scale(${zoom})`,
-                backgroundColor: '#f2e4cc',
+                backgroundColor: 'transparent',
                 backgroundImage: FLOOR_BG,
                 backgroundSize: '80px 80px',
-                boxShadow: 'inset 0 0 120px rgba(100,65,20,0.08)',
+                boxShadow: 'inset 0 0 120px rgba(0,0,0,0.5)',
               }}
             >
               {/* Hall walls outline */}
@@ -849,13 +849,13 @@ export default function TablePlanner({
                 position: 'absolute',
                 top: 48, left: 48,
                 width: CANVAS_W - 96, height: CANVAS_H - 96,
-                border: '6px solid rgba(130,90,40,0.18)',
+                border: '6px solid rgba(200,160,48,0.25)',
                 borderRadius: 8,
                 pointerEvents: 'none',
                 zIndex: 1,
                 boxShadow: [
-                  'inset 0 0 0 3px rgba(130,90,40,0.09)',
-                  '0 0 0 48px rgba(100,65,20,0.04)',
+                  'inset 0 0 0 3px rgba(200,160,48,0.1)',
+                  '0 0 0 48px rgba(0,0,0,0.15)',
                 ].join(', '),
               }} />
 
@@ -999,7 +999,6 @@ export default function TablePlanner({
                       shape={table.shape}
                       canEdit={canEdit && !isLocked}
                       onDelete={canEdit && !isLocked ? () => handleDeleteTable(table.id) : undefined}
-                      zoom={zoom}
                     />
                   </div>
                 )
