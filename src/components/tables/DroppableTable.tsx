@@ -46,7 +46,7 @@ function buildSeats(guests: Guest[], capacity: number): SeatEntry[] {
 function getChairColor(entry: SeatEntry): string {
   if (entry.kind === 'empty') return '#cbd5e1'
   const p = GUEST_PALETTE[entry.colorIndex % GUEST_PALETTE.length]
-  return entry.kind === 'main' ? p.main : p.light
+  return p.main
 }
 
 // Person silhouette — empty=faded outline, companion=pastel fill, main=vivid + ring
