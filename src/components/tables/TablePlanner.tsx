@@ -999,6 +999,7 @@ export default function TablePlanner({
                       shape={table.shape}
                       canEdit={canEdit && !isLocked}
                       onDelete={canEdit && !isLocked ? () => handleDeleteTable(table.id) : undefined}
+                      zoom={zoom}
                     />
                   </div>
                 )
