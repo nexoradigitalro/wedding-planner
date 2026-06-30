@@ -780,9 +780,11 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
                     <td className="px-4 py-3">
                       <p className="font-medium">{guest.name}</p>
                       {guest.email && <p className="text-xs text-muted-foreground">{guest.email}</p>}
-                      {(guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
-                        <p className="text-xs text-muted-foreground">+{guest.companions_count ?? 1} {guest.companions_count === 1 && guest.plus_one_name ? guest.plus_one_name : 'însoțitor(i)'}</p>
-                      )}
+                      {Array.from({ length: guest.companions_count ?? (guest.has_plus_one ? 1 : 0) }).map((_, i) => (
+                        <p key={i} className="text-xs text-rose-400 mt-0.5">
+                          ↳ {i === 0 && guest.plus_one_name ? guest.plus_one_name : `Însoțitor ${i + 1}`}
+                        </p>
+                      ))}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <Badge className={cn('text-xs border-0', CATEGORY_COLORS[guest.category])}>
