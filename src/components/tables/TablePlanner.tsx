@@ -590,6 +590,7 @@ export default function TablePlanner({
       created_at: new Date().toISOString(),
     }
     setVenueElements(prev => [...prev, newEl])
+    setAddElementOpen(false)
 
     // Persist to DB in background — if table doesn't exist yet, silently ignored
     supabase.from('venue_elements').insert({
