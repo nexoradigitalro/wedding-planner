@@ -29,14 +29,14 @@ type SeatEntry =
 
 function buildSeats(guests: Guest[], capacity: number): SeatEntry[] {
   const filled: SeatEntry[] = []
-  for (const g of guests) {
-    const colorIndex = guestColorIndex(g.id)
+  guests.forEach((g, guestIdx) => {
+    const colorIndex = guestIdx  // position in this table → cycles over 4 colors
     filled.push({ kind: 'main', guest: g, colorIndex })
     const count = g.companions?.length ?? g.companions_count ?? (g.has_plus_one ? 1 : 0)
     for (let i = 0; i < count; i++) {
       filled.push({ kind: 'plus_one', guest: g, companionIndex: i, colorIndex })
     }
-  }
+  })
   return [
     ...filled,
     ...Array.from({ length: Math.max(0, capacity - filled.length) }, () => ({ kind: 'empty' as const })),
@@ -44,18 +44,19 @@ function buildSeats(guests: Guest[], capacity: number): SeatEntry[] {
 }
 
 function getChairColor(entry: SeatEntry): string {
-  if (entry.kind === 'empty') return '#cbd5e1'
+  if (entry.kind === 'empty') return '#e2e8f0'
   const p = GUEST_PALETTE[entry.colorIndex % GUEST_PALETTE.length]
-  return entry.kind === 'main' ? p.main : p.light
+  // both main and companion use the pastel; ring on main distinguishes them
+  return p.light
 }
 
-// Person silhouette — main guest gets a colored ring to mark it as draggable
+// Person silhouette — main guest gets a solid colored ring to mark it as draggable
 function PersonIcon({ color, size, isMain, ringColor }: { color: string; size: number; isMain?: boolean; ringColor?: string }) {
   return (
-    <svg width={size} height={size} viewBox="-3 -3 34 36">
-      {isMain && ringColor && (
-        <circle cx="14" cy="15" r="16" fill="none" stroke={ringColor} strokeWidth="2.5" opacity="0.9" />
-      )}
+    <svg width={size} height={size} viewBox="-4 -4 36 38">
+      {isMain && ringColor ? (
+        <circle cx="14" cy="15" r="17" fill={ringColor} fillOpacity="0.15" stroke={ringColor} strokeWidth="3" />
+      ) : null}
       <circle cx="14" cy="9" r="7" fill={color} />
       <path d="M3 26 Q3 17 14 17 Q25 17 25 26 L23 30 L5 30 Z" fill={color} />
     </svg>
@@ -118,16 +119,16 @@ function NameLabel({ x, y, name, isMain, palette }: {
       left: x, top: y,
       transform: 'translate(-50%, -50%)',
       fontSize: 10,
-      fontWeight: isMain ? 700 : 500,
-      color: palette ? palette.text : (isMain ? '#1e293b' : '#64748b'),
+      fontWeight: isMain ? 700 : 400,
+      color: isMain ? (palette?.text ?? '#1e293b') : '#64748b',
       whiteSpace: 'nowrap',
       pointerEvents: 'none',
-      background: palette ? (isMain ? palette.light : '#f8fafc') : 'rgba(255,255,255,0.95)',
+      background: 'rgba(255,255,255,0.97)',
       borderRadius: 4,
       padding: '2px 5px',
       zIndex: 10,
       lineHeight: 1.3,
-      border: `1.5px solid ${palette ? (isMain ? palette.main : '#e2e8f0') : (isMain ? '#e2e8f0' : '#cbd5e1')}`,
+      border: `1px solid ${isMain ? (palette?.main ?? '#cbd5e1') : '#e2e8f0'}`,
     }}>
       {name}
     </div>

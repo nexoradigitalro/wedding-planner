@@ -63,22 +63,12 @@ export function rsvpLabel(status: string): string {
   return labels[status] ?? status
 }
 
+// 4 well-differentiated colors used per table, assigned by guest position
 export const GUEST_PALETTE = [
-  { main: '#e11d48', light: '#fecdd3', text: '#881337' },
-  { main: '#7c3aed', light: '#ede9fe', text: '#4c1d95' },
-  { main: '#1d4ed8', light: '#dbeafe', text: '#1e3a8a' },
-  { main: '#0891b2', light: '#cffafe', text: '#164e63' },
-  { main: '#059669', light: '#d1fae5', text: '#064e3b' },
-  { main: '#d97706', light: '#fef3c7', text: '#78350f' },
-  { main: '#9333ea', light: '#f3e8ff', text: '#581c87' },
-  { main: '#0284c7', light: '#e0f2fe', text: '#0c4a6e' },
-  { main: '#16a34a', light: '#dcfce7', text: '#14532d' },
-  { main: '#ea580c', light: '#ffedd5', text: '#7c2d12' },
-  { main: '#db2777', light: '#fce7f3', text: '#831843' },
-  { main: '#0f766e', light: '#ccfbf1', text: '#134e4a' },
-  { main: '#ca8a04', light: '#fef9c3', text: '#713f12' },
-  { main: '#475569', light: '#f1f5f9', text: '#1e293b' },
-  { main: '#be185d', light: '#fce7f3', text: '#831843' },
+  { main: '#e11d48', light: '#fecdd3', text: '#9f1239' },  // rose
+  { main: '#1d4ed8', light: '#dbeafe', text: '#1e3a8a' },  // blue
+  { main: '#16a34a', light: '#dcfce7', text: '#14532d' },  // green
+  { main: '#d97706', light: '#fef3c7', text: '#92400e' },  // amber
 ]
 
 export function guestColorIndex(guestId: string): number {
