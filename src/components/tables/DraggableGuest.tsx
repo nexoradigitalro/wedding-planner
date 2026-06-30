@@ -1,29 +1,12 @@
 'use client'
 
 import { useDraggable } from '@dnd-kit/core'
-import { cn } from '@/lib/utils'
+import { cn, GUEST_PALETTE, guestColorIndex } from '@/lib/utils'
 import type { Guest } from '@/types'
 
 interface Props {
   guest: Guest
   canEdit: boolean
-}
-
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  family:    { bg: '#f3e8ff', text: '#7c3aed' },
-  friends:   { bg: '#dbeafe', text: '#1d4ed8' },
-  coworkers: { bg: '#ffedd5', text: '#c2410c' },
-  kids:      { bg: '#fce7f3', text: '#be185d' },
-}
-
-const RSVP_RING: Record<string, string> = {
-  confirmed: '#22c55e',
-  pending:   '#eab308',
-  declined:  '#ef4444',
-}
-
-function getInitials(name: string) {
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
 export default function DraggableGuest({ guest, canEdit }: Props) {
@@ -32,7 +15,8 @@ export default function DraggableGuest({ guest, canEdit }: Props) {
     disabled: !canEdit,
   })
 
-  const color = CATEGORY_COLORS[guest.category] ?? CATEGORY_COLORS.friends
+  const palette = GUEST_PALETTE[guestColorIndex(guest.id) % GUEST_PALETTE.length]
+  const companionCount = guest.companions?.length ?? guest.companions_count ?? (guest.has_plus_one ? 1 : 0)
   const style = transform ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` } : undefined
 
   return (
@@ -46,18 +30,20 @@ export default function DraggableGuest({ guest, canEdit }: Props) {
     >
       <div style={{
         width: 28, height: 28, borderRadius: '50%',
-        backgroundColor: color.bg, color: color.text,
+        backgroundColor: palette.light, color: palette.text,
         fontSize: 10, fontWeight: 700,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: `2px solid ${RSVP_RING[guest.rsvp_status]}`,
+        border: `2.5px solid ${palette.main}`,
         flexShrink: 0,
       }}>
-        {getInitials(guest.name)}
+        {guest.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
       </div>
       <div className="min-w-0">
         <p className="font-medium text-gray-800 truncate text-xs">{guest.name}</p>
-        {(guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
-          <p className="text-gray-400 text-[10px] truncate">+{guest.companions_count ?? 1} {guest.companions_count === 1 && guest.plus_one_name ? guest.plus_one_name : 'însoțitor(i)'}</p>
+        {companionCount > 0 && (
+          <p className="text-gray-400 text-[10px] truncate">
+            +{companionCount} însoțitor{companionCount > 1 ? 'i' : ''}
+          </p>
         )}
       </div>
     </div>

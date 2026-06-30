@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
-import { cn } from '@/lib/utils'
+import { cn, GUEST_PALETTE, guestColorIndex } from '@/lib/utils'
 import type { Guest } from '@/types'
 
 interface Props {
@@ -16,20 +16,6 @@ interface Props {
   onDelete?: () => void
 }
 
-const CATEGORY_FILL: Record<string, string> = {
-  family:    '#7c3aed',
-  friends:   '#1d4ed8',
-  coworkers: '#c2410c',
-  kids:      '#be185d',
-}
-
-const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  family:    { bg: '#f3e8ff', text: '#7c3aed', border: '#c4b5fd' },
-  friends:   { bg: '#dbeafe', text: '#1d4ed8', border: '#93c5fd' },
-  coworkers: { bg: '#ffedd5', text: '#c2410c', border: '#fdba74' },
-  kids:      { bg: '#fce7f3', text: '#be185d', border: '#f9a8d4' },
-}
-
 const RSVP_RING: Record<string, string> = {
   confirmed: '#22c55e',
   pending:   '#eab308',
@@ -37,17 +23,18 @@ const RSVP_RING: Record<string, string> = {
 }
 
 type SeatEntry =
-  | { kind: 'main'; guest: Guest }
-  | { kind: 'plus_one'; guest: Guest; companionIndex: number }
+  | { kind: 'main'; guest: Guest; colorIndex: number }
+  | { kind: 'plus_one'; guest: Guest; companionIndex: number; colorIndex: number }
   | { kind: 'empty' }
 
 function buildSeats(guests: Guest[], capacity: number): SeatEntry[] {
   const filled: SeatEntry[] = []
   for (const g of guests) {
-    filled.push({ kind: 'main', guest: g })
+    const colorIndex = guestColorIndex(g.id)
+    filled.push({ kind: 'main', guest: g, colorIndex })
     const count = g.companions?.length ?? g.companions_count ?? (g.has_plus_one ? 1 : 0)
     for (let i = 0; i < count; i++) {
-      filled.push({ kind: 'plus_one', guest: g, companionIndex: i })
+      filled.push({ kind: 'plus_one', guest: g, companionIndex: i, colorIndex })
     }
   }
   return [
@@ -57,22 +44,18 @@ function buildSeats(guests: Guest[], capacity: number): SeatEntry[] {
 }
 
 function getChairColor(entry: SeatEntry): string {
-  if (entry.kind === 'empty') return '#94a3b8'
-  const base = CATEGORY_FILL[entry.guest.category] ?? '#475569'
-  if (entry.kind === 'plus_one') {
-    // lighter tint for companion
-    const map: Record<string, string> = {
-      family: '#a78bfa', friends: '#60a5fa', coworkers: '#fb923c', kids: '#f472b6',
-    }
-    return map[entry.guest.category] ?? '#94a3b8'
-  }
-  return base
+  if (entry.kind === 'empty') return '#cbd5e1'
+  const p = GUEST_PALETTE[entry.colorIndex % GUEST_PALETTE.length]
+  return entry.kind === 'main' ? p.main : p.light
 }
 
-// Person silhouette (top-down, "front" faces downward in SVG space)
-function PersonIcon({ color, size }: { color: string; size: number }) {
+// Person silhouette — main guest gets a colored ring to mark it as draggable
+function PersonIcon({ color, size, isMain, ringColor }: { color: string; size: number; isMain?: boolean; ringColor?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 28 30">
+    <svg width={size} height={size} viewBox="-3 -3 34 36">
+      {isMain && ringColor && (
+        <circle cx="14" cy="15" r="16" fill="none" stroke={ringColor} strokeWidth="2.5" opacity="0.9" />
+      )}
       <circle cx="14" cy="9" r="7" fill={color} />
       <path d="M3 26 Q3 17 14 17 Q25 17 25 26 L23 30 L5 30 Z" fill={color} />
     </svg>
@@ -91,7 +74,9 @@ function DraggableChair({
   canEdit: boolean
 }) {
   const draggable = entry.kind === 'main'
-  const dragId = draggable ? (entry as { kind: 'main'; guest: Guest }).guest.id : `__seat_${idx}`
+  const dragId = draggable ? (entry as { kind: 'main'; guest: Guest; colorIndex: number }).guest.id : `__seat_${idx}`
+  const palette = entry.kind !== 'empty' ? GUEST_PALETTE[entry.colorIndex % GUEST_PALETTE.length] : null
+  const isMain = entry.kind === 'main'
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: dragId,
@@ -116,15 +101,17 @@ function DraggableChair({
           )}
           {...(draggable && canEdit ? { ...listeners, ...attributes } : {})}
         >
-          <PersonIcon color={color} size={chairSize} />
+          <PersonIcon color={color} size={chairSize} isMain={isMain} ringColor={palette?.main} />
         </div>
       </div>
     </div>
   )
 }
 
-function NameLabel({ x, y, name, isMain, category }: { x: number; y: number; name: string; isMain: boolean; category?: string }) {
-  const col = category ? CATEGORY_COLORS[category] : null
+function NameLabel({ x, y, name, isMain, palette }: {
+  x: number; y: number; name: string; isMain: boolean;
+  palette?: { main: string; light: string; text: string }
+}) {
   return (
     <div style={{
       position: 'absolute',
@@ -132,15 +119,15 @@ function NameLabel({ x, y, name, isMain, category }: { x: number; y: number; nam
       transform: 'translate(-50%, -50%)',
       fontSize: 10,
       fontWeight: isMain ? 700 : 500,
-      color: col ? col.text : (isMain ? '#1e293b' : '#64748b'),
+      color: palette ? palette.text : (isMain ? '#1e293b' : '#64748b'),
       whiteSpace: 'nowrap',
       pointerEvents: 'none',
-      background: col ? col.bg : 'rgba(255,255,255,0.95)',
+      background: palette ? (isMain ? palette.light : '#f8fafc') : 'rgba(255,255,255,0.95)',
       borderRadius: 4,
       padding: '2px 5px',
       zIndex: 10,
       lineHeight: 1.3,
-      border: `1px solid ${col ? col.border : (isMain ? '#e2e8f0' : '#cbd5e1')}`,
+      border: `1.5px solid ${palette ? (isMain ? palette.main : '#e2e8f0') : (isMain ? '#e2e8f0' : '#cbd5e1')}`,
     }}>
       {name}
     </div>
@@ -192,12 +179,12 @@ function RoundTableVisual({ title, guests, capacity, canEdit }: { title: string;
         const nly = center + nameLabelR * Math.sin(angle)
         const name = entry.kind === 'main' ? entry.guest.name
           : entry.kind === 'plus_one' ? (entry.guest.companions?.[entry.companionIndex]?.name || (entry.companionIndex === 0 ? (entry.guest.plus_one_name || 'Însoțitor 1') : `Însoțitor ${entry.companionIndex + 1}`)) : null
-        const category = entry.kind !== 'empty' ? entry.guest.category : undefined
+        const palette = entry.kind !== 'empty' ? GUEST_PALETTE[entry.colorIndex % GUEST_PALETTE.length] : undefined
 
         return (
           <React.Fragment key={i}>
             <DraggableChair entry={entry} idx={i} chairSize={chairSize} x={cx} y={cy} rotDeg={rotDeg} canEdit={canEdit} />
-            {name && <NameLabel x={nlx} y={nly} name={name} isMain={entry.kind === 'main'} category={category} />}
+            {name && <NameLabel x={nlx} y={nly} name={name} isMain={entry.kind === 'main'} palette={palette} />}
           </React.Fragment>
         )
       })}
@@ -239,12 +226,12 @@ function RectTableVisual({ title, guests, capacity, canEdit }: { title: string; 
     rowSeats.map((entry, i) => {
       const x = i * (slotW + gap) + slotW / 2
       const name = entry.kind === 'main' ? entry.guest.name
-        : entry.kind === 'plus_one' ? (entry.companionIndex === 0 ? (entry.guest.plus_one_name || 'Însoțitor 1') : `Însoțitor ${entry.companionIndex + 1}`) : null
-      const category = entry.kind !== 'empty' ? entry.guest.category : undefined
+        : entry.kind === 'plus_one' ? (entry.guest.companions?.[entry.companionIndex]?.name || (entry.companionIndex === 0 ? (entry.guest.plus_one_name || 'Însoțitor 1') : `Însoțitor ${entry.companionIndex + 1}`)) : null
+      const palette = entry.kind !== 'empty' ? GUEST_PALETTE[entry.colorIndex % GUEST_PALETTE.length] : undefined
       return (
         <React.Fragment key={`${startIdx + i}`}>
           <DraggableChair entry={entry} idx={startIdx + i} chairSize={chairSize} x={x} y={rowY} rotDeg={rotDeg} canEdit={canEdit} />
-          {name && <NameLabel x={x} y={rowY + labelYOffset} name={name} isMain={entry.kind === 'main'} category={category} />}
+          {name && <NameLabel x={x} y={rowY + labelYOffset} name={name} isMain={entry.kind === 'main'} palette={palette} />}
         </React.Fragment>
       )
     })
@@ -329,7 +316,7 @@ function HeadTableVisual({ title, guests, capacity, canEdit }: { title: string; 
         const x = 12 + i * (slotW + gap) + slotW / 2
         const name = entry.kind === 'main' ? entry.guest.name
           : entry.kind === 'plus_one' ? (entry.guest.companions?.[entry.companionIndex]?.name || (entry.companionIndex === 0 ? (entry.guest.plus_one_name || 'Însoțitor 1') : `Însoțitor ${entry.companionIndex + 1}`)) : null
-        const category = entry.kind !== 'empty' ? entry.guest.category : undefined
+        const palette = entry.kind !== 'empty' ? GUEST_PALETTE[entry.colorIndex % GUEST_PALETTE.length] : undefined
         return (
           <React.Fragment key={i}>
             <DraggableChair
@@ -344,7 +331,7 @@ function HeadTableVisual({ title, guests, capacity, canEdit }: { title: string; 
                 y={chairRowY + chairSize / 2 + nameLabelH / 2 + 2}
                 name={name}
                 isMain={entry.kind === 'main'}
-                category={category}
+                palette={palette}
               />
             )}
           </React.Fragment>
@@ -359,7 +346,8 @@ function DraggableGuestRow({ guest, canEdit }: { guest: Guest; canEdit: boolean 
     id: guest.id, disabled: !canEdit,
   })
   const style = transform ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` } : undefined
-  const color = CATEGORY_COLORS[guest.category] ?? CATEGORY_COLORS.friends
+  const palette = GUEST_PALETTE[guestColorIndex(guest.id) % GUEST_PALETTE.length]
+  const companionCount = guest.companions?.length ?? guest.companions_count ?? (guest.has_plus_one ? 1 : 0)
 
   return (
     <div
@@ -372,23 +360,23 @@ function DraggableGuestRow({ guest, canEdit }: { guest: Guest; canEdit: boolean 
     >
       <div style={{
         width: 30, height: 30, borderRadius: '50%',
-        backgroundColor: color.bg, color: color.text,
+        backgroundColor: palette.light, color: palette.text,
         fontSize: 10, fontWeight: 700, flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: `2px solid ${RSVP_RING[guest.rsvp_status] ?? '#d1d5db'}`,
+        border: `2.5px solid ${palette.main}`,
       }}>
         {guest.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
       </div>
       <div className="min-w-0">
         <p className="font-medium text-gray-800 truncate text-xs leading-tight">{guest.name}</p>
-        {(guest.companions?.length ?? guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
+        {companionCount > 0 && (
           <p className="text-gray-400 text-[10px] truncate leading-tight">
-            +{guest.companions_count ?? 1} {guest.companions_count === 1 && guest.plus_one_name ? guest.plus_one_name : 'însoțitor(i)'}
+            +{companionCount} însoțitor{companionCount > 1 ? 'i' : ''}
           </p>
         )}
       </div>
-      {(guest.companions?.length ?? guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
-        <span className="text-[10px] text-rose-400 font-semibold shrink-0">×{1 + (guest.companions_count ?? 1)}</span>
+      {companionCount > 0 && (
+        <span className="text-[10px] font-semibold shrink-0" style={{ color: palette.main }}>×{1 + companionCount}</span>
       )}
     </div>
   )
