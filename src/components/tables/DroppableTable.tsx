@@ -166,7 +166,9 @@ function TableCenter({ title, occupied, capacity, radius }: { title: string; occ
         <div style={{ width: 1.5, height: 6, backgroundColor: '#94a3b8' }} />
         <div style={{ width: 10, height: 1.5, backgroundColor: '#94a3b8' }} />
       </div>
-      <span style={{ fontSize: 8, color: '#64748b', fontWeight: 600 }}>{occupied}/{capacity}</span>
+      <span style={{ fontSize: 8, fontWeight: 700, color: occupied > capacity ? '#ef4444' : '#64748b' }}>
+        {occupied > capacity ? `⚠ ${occupied}/${capacity}` : `${occupied}/${capacity}`}
+      </span>
     </div>
   )
 }
@@ -274,7 +276,9 @@ function RectTableVisual({ title, guests, capacity, canEdit }: { title: string; 
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 3 }}>
             <span style={{ fontSize: 9, color: '#f43f5e' }}>♥</span>
-            <span style={{ fontSize: 8, color: '#64748b', fontWeight: 600 }}>{occupied}/{capacity}</span>
+            <span style={{ fontSize: 8, fontWeight: 700, color: occupied > capacity ? '#ef4444' : '#64748b' }}>
+              {occupied > capacity ? `⚠ ${occupied}/${capacity}` : `${occupied}/${capacity}`}
+            </span>
           </div>
         </div>
       </div>
@@ -320,8 +324,8 @@ function HeadTableVisual({ title, guests, capacity, canEdit }: { title: string; 
         }}>
           {title}
         </div>
-        <span style={{ fontSize: 8, color: '#b45309', fontWeight: 600 }}>
-          {occupied}/{capacity} locuri
+        <span style={{ fontSize: 8, fontWeight: 700, color: occupied > capacity ? '#ef4444' : '#b45309' }}>
+          {occupied > capacity ? `⚠ ${occupied}/${capacity} locuri` : `${occupied}/${capacity} locuri`}
         </span>
       </div>
 
