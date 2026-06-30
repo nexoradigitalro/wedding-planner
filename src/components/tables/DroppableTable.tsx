@@ -44,19 +44,23 @@ function buildSeats(guests: Guest[], capacity: number): SeatEntry[] {
 }
 
 function getChairColor(entry: SeatEntry): string {
-  if (entry.kind === 'empty') return '#e2e8f0'
+  if (entry.kind === 'empty') return '#cbd5e1'
   const p = GUEST_PALETTE[entry.colorIndex % GUEST_PALETTE.length]
-  // both main and companion use the pastel; ring on main distinguishes them
-  return p.light
+  return entry.kind === 'main' ? p.main : p.light
 }
 
-// Person silhouette — main guest gets a solid colored ring to mark it as draggable
-function PersonIcon({ color, size, isMain, ringColor }: { color: string; size: number; isMain?: boolean; ringColor?: string }) {
+// Person silhouette — empty=faded outline, companion=pastel fill, main=vivid + ring
+function PersonIcon({ color, size, isEmpty, isMain, ringColor }: {
+  color: string; size: number; isEmpty?: boolean; isMain?: boolean; ringColor?: string
+}) {
   return (
-    <svg width={size} height={size} viewBox="-4 -4 36 38">
-      {isMain && ringColor ? (
-        <circle cx="14" cy="15" r="17" fill={ringColor} fillOpacity="0.15" stroke={ringColor} strokeWidth="3" />
-      ) : null}
+    <svg width={size} height={size} viewBox="-5 -5 38 40" opacity={isEmpty ? 0.22 : 1}>
+      {isMain && ringColor && (
+        <>
+          <circle cx="14" cy="15" r="18" fill="none" stroke={ringColor} strokeWidth="4" opacity="0.3" />
+          <circle cx="14" cy="15" r="18" fill="none" stroke={ringColor} strokeWidth="2" />
+        </>
+      )}
       <circle cx="14" cy="9" r="7" fill={color} />
       <path d="M3 26 Q3 17 14 17 Q25 17 25 26 L23 30 L5 30 Z" fill={color} />
     </svg>
@@ -90,7 +94,10 @@ function DraggableChair({
     : undefined
 
   return (
-    <div style={{ position: 'absolute', left: x - chairSize / 2, top: y - chairSize / 2, width: chairSize, height: chairSize }}>
+    <div
+      style={{ position: 'absolute', left: x - chairSize / 2, top: y - chairSize / 2, width: chairSize, height: chairSize }}
+      title={isMain && canEdit ? 'Trage pentru a muta familia' : undefined}
+    >
       <div style={{ width: '100%', height: '100%', transform: `rotate(${rotDeg}deg)`, transformOrigin: 'center center' }}>
         <div
           ref={draggable ? setNodeRef : undefined}
@@ -102,7 +109,13 @@ function DraggableChair({
           )}
           {...(draggable && canEdit ? { ...listeners, ...attributes } : {})}
         >
-          <PersonIcon color={color} size={chairSize} isMain={isMain} ringColor={palette?.main} />
+          <PersonIcon
+            color={color}
+            size={chairSize}
+            isEmpty={entry.kind === 'empty'}
+            isMain={isMain}
+            ringColor={palette?.main}
+          />
         </div>
       </div>
     </div>
