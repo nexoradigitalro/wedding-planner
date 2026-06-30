@@ -22,7 +22,7 @@ export default async function DashboardPage({ searchParams }: Props) {
     .select(`
       *,
       members:event_members(count),
-      guests:guests(id, has_plus_one)
+      guests:guests(id, has_plus_one, companions_count)
     `)
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false })
@@ -135,8 +135,8 @@ export default async function DashboardPage({ searchParams }: Props) {
             {[
               { label: 'Evenimente', value: events.length },
               { label: 'Total persoane', value: events.reduce((acc, e) => {
-                const rows = (e.guests as unknown as { id: string; has_plus_one: boolean }[]) ?? []
-                return acc + rows.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
+                const rows = (e.guests as unknown as { id: string; has_plus_one: boolean; companions_count?: number }[]) ?? []
+                return acc + rows.reduce((s, g) => s + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
               }, 0) },
               { label: 'Colaboratori', value: events.reduce((acc, e) => acc + ((e.members as unknown as { count: number }[])?.[0]?.count ?? 0), 0) },
               { label: 'Plan', value: planTier === 'pro' ? 'Pro' : planTier === 'basic' ? 'Basic' : 'Gratuit' },
@@ -155,8 +155,8 @@ export default async function DashboardPage({ searchParams }: Props) {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {events.map((event) => {
-                const guestRows = (event.guests as unknown as { id: string; has_plus_one: boolean }[]) ?? []
-                const guestCount = guestRows.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
+                const guestRows = (event.guests as unknown as { id: string; has_plus_one: boolean; companions_count?: number }[]) ?? []
+                const guestCount = guestRows.reduce((s, g) => s + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
                 const memberCount = (event.members as unknown as { count: number }[])?.[0]?.count ?? 0
                 const steps = [
                   { label: 'Eveniment creat', done: true },

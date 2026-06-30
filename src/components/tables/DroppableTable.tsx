@@ -38,14 +38,17 @@ const RSVP_RING: Record<string, string> = {
 
 type SeatEntry =
   | { kind: 'main'; guest: Guest }
-  | { kind: 'plus_one'; guest: Guest }
+  | { kind: 'plus_one'; guest: Guest; companionIndex: number }
   | { kind: 'empty' }
 
 function buildSeats(guests: Guest[], capacity: number): SeatEntry[] {
   const filled: SeatEntry[] = []
   for (const g of guests) {
     filled.push({ kind: 'main', guest: g })
-    if (g.has_plus_one) filled.push({ kind: 'plus_one', guest: g })
+    const count = g.companions_count ?? (g.has_plus_one ? 1 : 0)
+    for (let i = 0; i < count; i++) {
+      filled.push({ kind: 'plus_one', guest: g, companionIndex: i })
+    }
   }
   return [
     ...filled,
@@ -188,7 +191,7 @@ function RoundTableVisual({ title, guests, capacity, canEdit }: { title: string;
         const nlx = center + nameLabelR * Math.cos(angle)
         const nly = center + nameLabelR * Math.sin(angle)
         const name = entry.kind === 'main' ? entry.guest.name
-          : entry.kind === 'plus_one' ? (entry.guest.plus_one_name || 'Însoțitor') : null
+          : entry.kind === 'plus_one' ? (entry.companionIndex === 0 ? (entry.guest.plus_one_name || 'Însoțitor 1') : `Însoțitor ${entry.companionIndex + 1}`) : null
         const category = entry.kind !== 'empty' ? entry.guest.category : undefined
 
         return (
@@ -236,7 +239,7 @@ function RectTableVisual({ title, guests, capacity, canEdit }: { title: string; 
     rowSeats.map((entry, i) => {
       const x = i * (slotW + gap) + slotW / 2
       const name = entry.kind === 'main' ? entry.guest.name
-        : entry.kind === 'plus_one' ? (entry.guest.plus_one_name || 'Însoțitor') : null
+        : entry.kind === 'plus_one' ? (entry.companionIndex === 0 ? (entry.guest.plus_one_name || 'Însoțitor 1') : `Însoțitor ${entry.companionIndex + 1}`) : null
       const category = entry.kind !== 'empty' ? entry.guest.category : undefined
       return (
         <React.Fragment key={`${startIdx + i}`}>
@@ -325,7 +328,7 @@ function HeadTableVisual({ title, guests, capacity, canEdit }: { title: string; 
       {seats.map((entry, i) => {
         const x = 12 + i * (slotW + gap) + slotW / 2
         const name = entry.kind === 'main' ? entry.guest.name
-          : entry.kind === 'plus_one' ? (entry.guest.plus_one_name || 'Însoțitor') : null
+          : entry.kind === 'plus_one' ? (entry.companionIndex === 0 ? (entry.guest.plus_one_name || 'Însoțitor 1') : `Însoțitor ${entry.companionIndex + 1}`) : null
         const category = entry.kind !== 'empty' ? entry.guest.category : undefined
         return (
           <React.Fragment key={i}>
@@ -378,15 +381,14 @@ function DraggableGuestRow({ guest, canEdit }: { guest: Guest; canEdit: boolean 
       </div>
       <div className="min-w-0">
         <p className="font-medium text-gray-800 truncate text-xs leading-tight">{guest.name}</p>
-        {guest.has_plus_one && (
+        {(guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
           <p className="text-gray-400 text-[10px] truncate leading-tight">
-            + {guest.plus_one_name || 'însoțitor'}
-            {guest.plus_one_portion === 'none' ? ' (fără meniu)' : ''}
+            +{guest.companions_count ?? 1} {guest.companions_count === 1 && guest.plus_one_name ? guest.plus_one_name : 'însoțitor(i)'}
           </p>
         )}
       </div>
-      {guest.has_plus_one && (
-        <span className="text-[10px] text-rose-400 font-semibold shrink-0">×2</span>
+      {(guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
+        <span className="text-[10px] text-rose-400 font-semibold shrink-0">×{1 + (guest.companions_count ?? 1)}</span>
       )}
     </div>
   )
@@ -395,7 +397,7 @@ function DraggableGuestRow({ guest, canEdit }: { guest: Guest; canEdit: boolean 
 export default function DroppableTable({ id, title, guests, capacity, shape, canEdit, isUnassigned, onDelete }: Props) {
   const { isOver, setNodeRef } = useDroppable({ id })
 
-  const occupiedSeats = guests.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
+  const occupiedSeats = guests.reduce((s, g) => s + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
   const isFull = !isUnassigned && occupiedSeats >= capacity
 
   if (isUnassigned) {

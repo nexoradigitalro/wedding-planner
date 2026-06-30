@@ -56,8 +56,8 @@ export default function DraggableGuest({ guest, canEdit }: Props) {
       </div>
       <div className="min-w-0">
         <p className="font-medium text-gray-800 truncate text-xs">{guest.name}</p>
-        {guest.has_plus_one && (
-          <p className="text-gray-400 text-[10px] truncate">+ {guest.plus_one_name || 'însoțitor'}</p>
+        {(guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
+          <p className="text-gray-400 text-[10px] truncate">+{guest.companions_count ?? 1} {guest.companions_count === 1 && guest.plus_one_name ? guest.plus_one_name : 'însoțitor(i)'}</p>
         )}
       </div>
     </div>

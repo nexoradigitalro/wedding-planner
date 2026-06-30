@@ -55,8 +55,8 @@ export default async function CheckinPage({ params }: Props) {
             <Badge className={guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-800 border-0' : 'bg-yellow-100 text-yellow-800 border-0'}>
               {guest.rsvp_status === 'confirmed' ? 'Confirmat' : 'În așteptare'}
             </Badge>
-            {guest.has_plus_one && (
-              <Badge variant="outline">+1 însoțitor</Badge>
+            {(guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
+              <Badge variant="outline">+{guest.companions_count ?? 1} însoțitor{(guest.companions_count ?? 1) > 1 ? 'i' : ''}</Badge>
             )}
           </div>
 

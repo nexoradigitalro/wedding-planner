@@ -196,7 +196,7 @@ export default function TablePlanner({
     // Tables
     for (const table of tables) {
       const pos = positions[table.id] ?? { x: 80, y: 80 }
-      const occ = table.guests.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
+      const occ = table.guests.reduce((s, g) => s + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
       const fullP = table.guests.length + table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'full').length
       const halfP = table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'half').length
       const noneP = table.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'none').length
@@ -284,7 +284,7 @@ export default function TablePlanner({
     doc.text(ps(eventName || 'Plan sala'), mg, mg + 6)
 
     // Footer
-    const totOcc = tables.reduce((s, t) => s + t.guests.reduce((a, g) => a + 1 + (g.has_plus_one ? 1 : 0), 0), 0)
+    const totOcc = tables.reduce((s, t) => s + t.guests.reduce((a, g) => a + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0), 0)
     const totCap = tables.reduce((s, t) => s + t.capacity, 0)
     const totFull = tables.reduce((s, t) => s + t.guests.length + t.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'full').length, 0)
     const totHalf = tables.reduce((s, t) => s + t.guests.filter(g => g.has_plus_one && g.plus_one_portion === 'half').length, 0)
@@ -492,8 +492,8 @@ export default function TablePlanner({
     if (guest.table_id === targetTableId) return
     const targetTable = targetTableId ? tables.find(t => t.id === targetTableId) : null
     if (targetTable) {
-      const occ = targetTable.guests.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
-      const seats = 1 + (guest.has_plus_one ? 1 : 0)
+      const occ = targetTable.guests.reduce((s, g) => s + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
+      const seats = 1 + (guest.companions_count ?? (guest.has_plus_one ? 1 : 0))
       if (occ + seats > targetTable.capacity) return
     }
     setTables(prev => prev.map(t => {
@@ -623,8 +623,8 @@ export default function TablePlanner({
   }
 
   const totalSeats = tables.reduce((s, t) => s + t.capacity, 0)
-  const occupiedSeats = tables.reduce((s, t) => s + t.guests.reduce((a, g) => a + 1 + (g.has_plus_one ? 1 : 0), 0), 0)
-  const unassignedCount = unassigned.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
+  const occupiedSeats = tables.reduce((s, t) => s + t.guests.reduce((a, g) => a + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0), 0)
+  const unassignedCount = unassigned.reduce((s, g) => s + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
 
   return (
     <div className="flex flex-col gap-3 md:h-[calc(100vh-180px)]">
@@ -751,7 +751,7 @@ export default function TablePlanner({
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${catCfg?.color ?? 'bg-gray-100 text-gray-500 border-gray-200'}`}>
                         {catCfg?.label ?? g.category}
                       </span>
-                      <span className="text-sm font-medium text-gray-800 truncate">{g.name}{g.has_plus_one ? ` +1` : ''}</span>
+                      <span className="text-sm font-medium text-gray-800 truncate">{g.name}{(g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? ` +${g.companions_count ?? 1}` : ''}</span>
                     </div>
                     {canEdit && (
                       <select
@@ -766,7 +766,7 @@ export default function TablePlanner({
                       >
                         <option value="">Asignează...</option>
                         {tables.map(t => {
-                          const occ = t.guests.reduce((s, x) => s + 1 + (x.has_plus_one ? 1 : 0), 0)
+                          const occ = t.guests.reduce((s, x) => s + 1 + (x.companions_count ?? (x.has_plus_one ? 1 : 0)), 0)
                           return <option key={t.id} value={t.id} disabled={occ >= t.capacity}>{t.name} ({occ}/{t.capacity})</option>
                         })}
                       </select>
@@ -778,7 +778,7 @@ export default function TablePlanner({
           </div>
         )}
         {tables.map((table) => {
-          const occ = table.guests.reduce((s, g) => s + 1 + (g.has_plus_one ? 1 : 0), 0)
+          const occ = table.guests.reduce((s, g) => s + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
           return (
             <div key={table.id} className="rounded-xl border border-stone-200 bg-white p-4">
               <div className="flex items-center justify-between mb-3">
@@ -795,7 +795,7 @@ export default function TablePlanner({
                     const catCfg = CATEGORY_LABELS[g.category]
                     return (
                       <span key={g.id} className={`text-xs rounded-full px-2.5 py-1 border font-medium ${catCfg?.color ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                        {g.name}{g.has_plus_one ? ` +1` : ''}
+                        {g.name}{(g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? ` +${g.companions_count ?? 1}` : ''}
                       </span>
                     )
                   })}

@@ -65,6 +65,7 @@ export interface Guest {
   plus_one_name: string | null
   plus_one_confirmed: boolean
   plus_one_portion: 'full' | 'half' | 'none'
+  companions_count: number
   dietary: string | null
   notes: string | null
   table_id: string | null

@@ -64,7 +64,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const emptyGuest = {
   name: '', email: '', phone: '', category: 'friends' as Guest['category'],
-  rsvp_status: 'pending' as Guest['rsvp_status'], has_plus_one: false, plus_one_name: '',
+  rsvp_status: 'pending' as Guest['rsvp_status'], companions_count: 0, plus_one_name: '',
   plus_one_portion: 'full' as 'full' | 'half' | 'none',
   dietary: '', notes: '',
 }
@@ -115,7 +115,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     return matchSearch && matchCat && matchRsvp
   })
 
-  const plusOneCount = guests.filter((g) => g.has_plus_one).length
+  const plusOneCount = guests.reduce((s, g) => s + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
   const total = guests.length + plusOneCount
   const confirmed = guests.filter((g) => g.rsvp_status === 'confirmed').length
   const declined = guests.filter((g) => g.rsvp_status === 'declined').length
@@ -140,7 +140,8 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     setForm({
       name: guest.name, email: guest.email ?? '', phone: guest.phone ?? '',
       category: guest.category, rsvp_status: guest.rsvp_status,
-      has_plus_one: guest.has_plus_one, plus_one_name: guest.plus_one_name ?? '',
+      companions_count: guest.companions_count ?? (guest.has_plus_one ? 1 : 0),
+      plus_one_name: guest.plus_one_name ?? '',
       plus_one_portion: guest.plus_one_portion ?? 'full',
       dietary: guest.dietary ?? '', notes: guest.notes ?? '',
     })
@@ -151,12 +152,14 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     e.preventDefault()
     setLoading(true)
     const name = nameRef.current?.value?.trim() || form.name
+    const companions = form.companions_count
     const payload = {
       name, email: emailRef.current?.value || null, phone: phoneRef.current?.value || null,
       category: form.category, rsvp_status: form.rsvp_status,
-      has_plus_one: form.has_plus_one,
-      plus_one_name: form.has_plus_one ? (plusOneNameRef.current?.value || null) : null,
-      plus_one_portion: form.has_plus_one ? form.plus_one_portion : 'full',
+      companions_count: companions,
+      has_plus_one: companions > 0,
+      plus_one_name: companions > 0 ? (plusOneNameRef.current?.value || null) : null,
+      plus_one_portion: companions > 0 ? form.plus_one_portion : 'full',
       dietary: dietaryRef.current?.value || null, notes: notesRef.current?.value || null,
     }
     if (!payload.name) { toast.error('Numele este obligatoriu'); setLoading(false); return }
@@ -225,7 +228,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
           String(i + 1),
           '',
           pdfSafe(g.name),
-          pdfSafe(g.has_plus_one ? (g.plus_one_name || '+1') : ''),
+          pdfSafe((g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? (g.companions_count === 1 && g.plus_one_name ? g.plus_one_name : `+${g.companions_count ?? 1}`) : ''),
           pdfSafe(tables.find(t => t.id === g.table_id)?.name ?? 'Neasignat'),
         ])
       })
@@ -241,12 +244,12 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
         const tGuests = (grouped.get(t.id) ?? []).sort((a, b) => a.name.localeCompare(b.name))
         if (tGuests.length === 0) continue
         rows.push([{ content: pdfSafe(`${t.name}  (${tGuests.length} pers.)`) , colSpan: 5, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', fontSize: 9, textColor: [30, 41, 59], cellPadding: { top: 3, bottom: 3, left: 5, right: 3 } } }])
-        tGuests.forEach(g => rows.push(['', '', pdfSafe(g.name), pdfSafe(g.has_plus_one ? (g.plus_one_name || '+1') : ''), '']))
+        tGuests.forEach(g => { const cc = g.companions_count ?? (g.has_plus_one ? 1 : 0); rows.push(['', '', pdfSafe(g.name), pdfSafe(cc > 0 ? (cc === 1 && g.plus_one_name ? g.plus_one_name : `+${cc}`) : ''), '']) })
       }
       const unassigned = (grouped.get('__none__') ?? []).sort((a, b) => a.name.localeCompare(b.name))
       if (unassigned.length > 0) {
         rows.push([{ content: pdfSafe(`Neasignati (${unassigned.length} pers.)`), colSpan: 5, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', fontSize: 9, textColor: [30, 41, 59], cellPadding: { top: 3, bottom: 3, left: 5, right: 3 } } }])
-        unassigned.forEach(g => rows.push(['', '', pdfSafe(g.name), pdfSafe(g.has_plus_one ? (g.plus_one_name || '+1') : ''), '']))
+        unassigned.forEach(g => { const cc = g.companions_count ?? (g.has_plus_one ? 1 : 0); rows.push(['', '', pdfSafe(g.name), pdfSafe(cc > 0 ? (cc === 1 && g.plus_one_name ? g.plus_one_name : `+${cc}`) : ''), '']) })
       }
     }
 
@@ -350,7 +353,8 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     for (const g of sorted) {
       const letter = (g.name[0] ?? '?').toUpperCase()
       const tbl = tables.find(t => t.id === g.table_id)?.name ?? 'Neasignat'
-      const comp = g.has_plus_one ? ` Si ${g.plus_one_name || '+1'}` : ''
+      const compCount = g.companions_count ?? (g.has_plus_one ? 1 : 0)
+      const comp = compCount > 0 ? ` Si ${compCount === 1 && g.plus_one_name ? g.plus_one_name : `+${compCount}`}` : ''
       const entry = pdfSafe(`${g.name}${comp} - ${tbl}`)
       let grp = groups.find(gr => gr.letter === letter)
       if (!grp) { grp = { letter, entries: [] }; groups.push(grp) }
@@ -466,6 +470,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
             category: (['family', 'friends', 'coworkers', 'kids'].includes(row.category) ? row.category : 'friends') as Guest['category'],
             rsvp_status,
             has_plus_one,
+            companions_count: has_plus_one ? 1 : 0,
             plus_one_name: has_plus_one ? companion : null,
             plus_one_portion: has_plus_one ? plus_one_portion : 'full',
           }
@@ -495,8 +500,8 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     const rows = guests.map((g) => ({
       Nume: g.name,
       RSVP: RSVP_LABELS[g.rsvp_status] ?? g.rsvp_status,
-      Insotitor: g.has_plus_one ? (g.plus_one_name ?? 'Da') : 'Nu',
-      'Portie insotitor': g.has_plus_one ? (PORTION_LABELS[g.plus_one_portion] ?? g.plus_one_portion) : '',
+      Insotitor: (g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? (g.plus_one_name ?? `+${g.companions_count ?? 1}`) : 'Nu',
+      'Portie insotitor': (g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? (PORTION_LABELS[g.plus_one_portion] ?? g.plus_one_portion) : '',
       Masa: tables.find((t) => t.id === g.table_id)?.name ?? '',
       'Preferinta mancare': g.dietary ?? '',
     }))
@@ -534,7 +539,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
         pdfSafe(rsvpLabel(g.rsvp_status)),
         pdfSafe(categoryLabel(g.category)),
         pdfSafe(g.dietary || '—'),
-        g.has_plus_one ? pdfSafe(`Da${g.plus_one_name ? ` (${g.plus_one_name})` : ''}`) : 'Nu',
+        (g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? pdfSafe(`+${g.companions_count ?? 1}${g.companions_count === 1 && g.plus_one_name ? ` (${g.plus_one_name})` : ''}`) : 'Nu',
       ]
       if (tableInfo) {
         if (!byTable[tableInfo.id]) byTable[tableInfo.id] = { name: tableInfo.name, rows: [] }
@@ -775,8 +780,8 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
                     <td className="px-4 py-3">
                       <p className="font-medium">{guest.name}</p>
                       {guest.email && <p className="text-xs text-muted-foreground">{guest.email}</p>}
-                      {guest.has_plus_one && (
-                        <p className="text-xs text-muted-foreground">+1 {guest.plus_one_name ?? ''}</p>
+                      {(guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
+                        <p className="text-xs text-muted-foreground">+{guest.companions_count ?? 1} {guest.companions_count === 1 && guest.plus_one_name ? guest.plus_one_name : 'însoțitor(i)'}</p>
                       )}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
@@ -857,24 +862,33 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="plus_one"
-                  checked={form.has_plus_one}
-                  onChange={(e) => setForm({ ...form, has_plus_one: e.target.checked })}
-                  className="rounded"
-                />
-                <Label htmlFor="plus_one">Are +1 însoțitor</Label>
+              <div className="col-span-2 space-y-1">
+                <Label>Însoțitori (0 = nimeni, 1 = soț/soție, 2+ = cu copii etc.)</Label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, companions_count: Math.max(0, f.companions_count - 1) }))}
+                    className="w-8 h-8 rounded-lg border border-input flex items-center justify-center font-bold text-gray-600 hover:bg-stone-100 transition-colors"
+                  >−</button>
+                  <span className="w-8 text-center text-sm font-semibold">{form.companions_count}</span>
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, companions_count: Math.min(10, f.companions_count + 1) }))}
+                    className="w-8 h-8 rounded-lg border border-input flex items-center justify-center font-bold text-gray-600 hover:bg-stone-100 transition-colors"
+                  >+</button>
+                  <span className="text-xs text-gray-400 ml-1">
+                    {form.companions_count === 0 ? 'Singur/ă' : form.companions_count === 1 ? '+ 1 persoană' : `+ ${form.companions_count} persoane`}
+                  </span>
+                </div>
               </div>
-              {form.has_plus_one && (
+              {form.companions_count > 0 && (
                 <>
                   <div className="col-span-2 space-y-1">
-                    <Label>Numele însoțitorului</Label>
+                    <Label>Numele primului însoțitor {form.companions_count > 1 ? '(opțional)' : ''}</Label>
                     <input ref={plusOneNameRef} defaultValue={form.plus_one_name} placeholder="Maria Popescu" className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200 transition-colors" />
                   </div>
                   <div className="col-span-2 space-y-1">
-                    <Label>Porție însoțitor</Label>
+                    <Label>Porție însoțitor principal</Label>
                     <Select value={form.plus_one_portion} onValueChange={(v) => v && setForm({ ...form, plus_one_portion: v as 'full' | 'half' | 'none' })}>
                       <SelectTrigger>
                         <SelectValue>{PORTION_LABELS[form.plus_one_portion]}</SelectValue>
