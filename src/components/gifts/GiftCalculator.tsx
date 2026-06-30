@@ -26,7 +26,7 @@ export default function GiftCalculator({ eventId, initialGuests }: Props) {
   const totalCollected = guests.reduce((s, g) => s + (g.gift_amount ?? 0), 0)
   const withGift = guests.filter((g) => (g.gift_amount ?? 0) > 0)
   const avgGift = withGift.length > 0 ? Math.round(totalCollected / withGift.length) : 0
-  const totalPersons = present.reduce((s, g) => s + 1 + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
+  const totalPersons = present.reduce((s, g) => s + 1 + (g.companions?.length ?? g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
 
   async function setAttended(guest: GuestRow, val: boolean | null) {
     setGuests((prev) => prev.map((g) => g.id === guest.id ? { ...g, attended: val } : g))
@@ -116,8 +116,10 @@ export default function GiftCalculator({ eventId, initialGuests }: Props) {
               <tr key={guest.id} className={cn('transition-colors', guest.attended === false && 'opacity-50 bg-gray-50')}>
                 <td className="px-4 py-3">
                   <p className="font-medium text-gray-900">{guest.name}</p>
-                  {(guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
-                    <p className="text-xs text-muted-foreground">+{guest.companions_count ?? 1} {guest.companions_count === 1 && guest.plus_one_name ? guest.plus_one_name : 'însoțitor(i)'}</p>
+                  {(guest.companions?.length ?? guest.companions_count ?? (guest.has_plus_one ? 1 : 0)) > 0 && (
+                    (guest.companions?.length > 0 ? guest.companions : guest.has_plus_one ? [{ name: guest.plus_one_name ?? '', portion: guest.plus_one_portion ?? 'full' }] : []).map((c, i) => (
+                      <p key={i} className="text-xs text-muted-foreground">↳ {c.name || `Însoțitor ${i + 1}`} · {c.portion === 'full' ? 'adult' : c.portion === 'half' ? 'copil ½' : 'fără meniu'}</p>
+                    ))
                   )}
                 </td>
                 <td className="px-4 py-3">

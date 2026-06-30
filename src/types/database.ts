@@ -53,6 +53,11 @@ export interface EventMember {
   profile?: Profile
 }
 
+export interface Companion {
+  name: string
+  portion: 'full' | 'half' | 'none'
+}
+
 export interface Guest {
   id: string
   event_id: string
@@ -66,6 +71,7 @@ export interface Guest {
   plus_one_confirmed: boolean
   plus_one_portion: 'full' | 'half' | 'none'
   companions_count: number
+  companions: Companion[]
   dietary: string | null
   notes: string | null
   table_id: string | null

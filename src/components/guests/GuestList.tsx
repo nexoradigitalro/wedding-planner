@@ -15,8 +15,16 @@ import {
 import { Label } from '@/components/ui/label'
 import { categoryLabel, rsvpLabel, cn } from '@/lib/utils'
 import { PLAN_LIMITS } from '@/types'
-import type { Guest } from '@/types'
+import type { Guest, Companion } from '@/types'
 import Papa from 'papaparse'
+
+type CompanionForm = { name: string; portion: 'full' | 'half' | 'none' }
+
+function guestCompanions(g: Guest): CompanionForm[] {
+  if (g.companions?.length > 0) return g.companions
+  if (g.has_plus_one) return [{ name: g.plus_one_name ?? '', portion: (g.plus_one_portion ?? 'full') as 'full' | 'half' | 'none' }]
+  return []
+}
 import Link from 'next/link'
 import { toast } from 'sonner'
 
@@ -64,8 +72,8 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const emptyGuest = {
   name: '', email: '', phone: '', category: 'friends' as Guest['category'],
-  rsvp_status: 'pending' as Guest['rsvp_status'], companions_count: 0, plus_one_name: '',
-  plus_one_portion: 'full' as 'full' | 'half' | 'none',
+  rsvp_status: 'pending' as Guest['rsvp_status'],
+  companions: [] as CompanionForm[],
   dietary: '', notes: '',
 }
 
@@ -82,7 +90,6 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
   const nameRef = useRef<HTMLInputElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
   const phoneRef = useRef<HTMLInputElement>(null)
-  const plusOneNameRef = useRef<HTMLInputElement>(null)
   const dietaryRef = useRef<HTMLInputElement>(null)
   const notesRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
@@ -115,16 +122,15 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     return matchSearch && matchCat && matchRsvp
   })
 
-  const plusOneCount = guests.reduce((s, g) => s + (g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
-  const total = guests.length + plusOneCount
+  const allCompanions = guests.flatMap(guestCompanions)
+  const total = guests.length + allCompanions.length
   const confirmed = guests.filter((g) => g.rsvp_status === 'confirmed').length
   const declined = guests.filter((g) => g.rsvp_status === 'declined').length
   const pending = guests.filter((g) => g.rsvp_status === 'pending').length
 
-  const fullPortions = guests.length
-    + guests.filter((g) => g.has_plus_one && g.plus_one_portion === 'full').length
-  const halfPortions = guests.filter((g) => g.has_plus_one && g.plus_one_portion === 'half').length
-  const noPortions = guests.filter((g) => g.has_plus_one && g.plus_one_portion === 'none').length
+  const fullPortions = guests.length + allCompanions.filter(c => c.portion === 'full').length
+  const halfPortions = allCompanions.filter(c => c.portion === 'half').length
+  const noPortions = allCompanions.filter(c => c.portion === 'none').length
 
   // Mărturii = 1 per invitație (cuplu sau single), excl. declinați
   const marturii = guests.filter((g) => g.rsvp_status !== 'declined').length
@@ -140,9 +146,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     setForm({
       name: guest.name, email: guest.email ?? '', phone: guest.phone ?? '',
       category: guest.category, rsvp_status: guest.rsvp_status,
-      companions_count: guest.companions_count ?? (guest.has_plus_one ? 1 : 0),
-      plus_one_name: guest.plus_one_name ?? '',
-      plus_one_portion: guest.plus_one_portion ?? 'full',
+      companions: guestCompanions(guest).map(c => ({ name: c.name, portion: c.portion })),
       dietary: guest.dietary ?? '', notes: guest.notes ?? '',
     })
     setOpen(true)
@@ -152,14 +156,15 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     e.preventDefault()
     setLoading(true)
     const name = nameRef.current?.value?.trim() || form.name
-    const companions = form.companions_count
+    const companions: Companion[] = form.companions
     const payload = {
       name, email: emailRef.current?.value || null, phone: phoneRef.current?.value || null,
       category: form.category, rsvp_status: form.rsvp_status,
-      companions_count: companions,
-      has_plus_one: companions > 0,
-      plus_one_name: companions > 0 ? (plusOneNameRef.current?.value || null) : null,
-      plus_one_portion: companions > 0 ? form.plus_one_portion : 'full',
+      companions,
+      companions_count: companions.length,
+      has_plus_one: companions.length > 0,
+      plus_one_name: companions[0]?.name || null,
+      plus_one_portion: companions[0]?.portion ?? 'full',
       dietary: dietaryRef.current?.value || null, notes: notesRef.current?.value || null,
     }
     if (!payload.name) { toast.error('Numele este obligatoriu'); setLoading(false); return }
@@ -221,14 +226,18 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows: any[] = []
 
+    const compStr = (g: Guest) => {
+      const cs = guestCompanions(g)
+      return cs.length > 0 ? cs.map(c => c.name || '?').join(', ') : ''
+    }
+
     if (sortBy === 'alpha') {
       const sorted = [...guests].sort((a, b) => a.name.localeCompare(b.name))
       sorted.forEach((g, i) => {
         rows.push([
-          String(i + 1),
-          '',
+          String(i + 1), '',
           pdfSafe(g.name),
-          pdfSafe((g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? (g.companions_count === 1 && g.plus_one_name ? g.plus_one_name : `+${g.companions_count ?? 1}`) : ''),
+          pdfSafe(compStr(g)),
           pdfSafe(tables.find(t => t.id === g.table_id)?.name ?? 'Neasignat'),
         ])
       })
@@ -243,13 +252,13 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
       for (const t of sortedTables) {
         const tGuests = (grouped.get(t.id) ?? []).sort((a, b) => a.name.localeCompare(b.name))
         if (tGuests.length === 0) continue
-        rows.push([{ content: pdfSafe(`${t.name}  (${tGuests.length} pers.)`) , colSpan: 5, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', fontSize: 9, textColor: [30, 41, 59], cellPadding: { top: 3, bottom: 3, left: 5, right: 3 } } }])
-        tGuests.forEach(g => { const cc = g.companions_count ?? (g.has_plus_one ? 1 : 0); rows.push(['', '', pdfSafe(g.name), pdfSafe(cc > 0 ? (cc === 1 && g.plus_one_name ? g.plus_one_name : `+${cc}`) : ''), '']) })
+        rows.push([{ content: pdfSafe(`${t.name}  (${tGuests.length} pers.)`), colSpan: 5, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', fontSize: 9, textColor: [30, 41, 59], cellPadding: { top: 3, bottom: 3, left: 5, right: 3 } } }])
+        tGuests.forEach(g => rows.push(['', '', pdfSafe(g.name), pdfSafe(compStr(g)), '']))
       }
       const unassigned = (grouped.get('__none__') ?? []).sort((a, b) => a.name.localeCompare(b.name))
       if (unassigned.length > 0) {
         rows.push([{ content: pdfSafe(`Neasignati (${unassigned.length} pers.)`), colSpan: 5, styles: { fillColor: [241, 245, 249], fontStyle: 'bold', fontSize: 9, textColor: [30, 41, 59], cellPadding: { top: 3, bottom: 3, left: 5, right: 3 } } }])
-        unassigned.forEach(g => { const cc = g.companions_count ?? (g.has_plus_one ? 1 : 0); rows.push(['', '', pdfSafe(g.name), pdfSafe(cc > 0 ? (cc === 1 && g.plus_one_name ? g.plus_one_name : `+${cc}`) : ''), '']) })
+        unassigned.forEach(g => rows.push(['', '', pdfSafe(g.name), pdfSafe(compStr(g)), '']))
       }
     }
 
@@ -353,8 +362,8 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     for (const g of sorted) {
       const letter = (g.name[0] ?? '?').toUpperCase()
       const tbl = tables.find(t => t.id === g.table_id)?.name ?? 'Neasignat'
-      const compCount = g.companions_count ?? (g.has_plus_one ? 1 : 0)
-      const comp = compCount > 0 ? ` Si ${compCount === 1 && g.plus_one_name ? g.plus_one_name : `+${compCount}`}` : ''
+      const cs = guestCompanions(g)
+      const comp = cs.length > 0 ? ` Si ${cs.map(c => c.name || '?').join(', ')}` : ''
       const entry = pdfSafe(`${g.name}${comp} - ${tbl}`)
       let grp = groups.find(gr => gr.letter === letter)
       if (!grp) { grp = { letter, entries: [] }; groups.push(grp) }
@@ -462,6 +471,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
             : portionRaw.includes('½') || portionRaw.includes('copil') ? 'half'
             : 'full'
 
+          const companions: Companion[] = has_plus_one ? [{ name: companion, portion: plus_one_portion }] : []
           return {
             event_id: eventId,
             name,
@@ -469,8 +479,9 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
             phone: row.phone || row.Phone || row.Telefon || null,
             category: (['family', 'friends', 'coworkers', 'kids'].includes(row.category) ? row.category : 'friends') as Guest['category'],
             rsvp_status,
+            companions,
             has_plus_one,
-            companions_count: has_plus_one ? 1 : 0,
+            companions_count: companions.length,
             plus_one_name: has_plus_one ? companion : null,
             plus_one_portion: has_plus_one ? plus_one_portion : 'full',
           }
@@ -500,8 +511,8 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
     const rows = guests.map((g) => ({
       Nume: g.name,
       RSVP: RSVP_LABELS[g.rsvp_status] ?? g.rsvp_status,
-      Insotitor: (g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? (g.plus_one_name ?? `+${g.companions_count ?? 1}`) : 'Nu',
-      'Portie insotitor': (g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? (PORTION_LABELS[g.plus_one_portion] ?? g.plus_one_portion) : '',
+      Insotitor: guestCompanions(g).map(c => c.name || '?').join(' / ') || 'Nu',
+      'Portie insotitor': guestCompanions(g).map(c => PORTION_LABELS[c.portion] ?? c.portion).join(' / '),
       Masa: tables.find((t) => t.id === g.table_id)?.name ?? '',
       'Preferinta mancare': g.dietary ?? '',
     }))
@@ -539,7 +550,7 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
         pdfSafe(rsvpLabel(g.rsvp_status)),
         pdfSafe(categoryLabel(g.category)),
         pdfSafe(g.dietary || '—'),
-        (g.companions_count ?? (g.has_plus_one ? 1 : 0)) > 0 ? pdfSafe(`+${g.companions_count ?? 1}${g.companions_count === 1 && g.plus_one_name ? ` (${g.plus_one_name})` : ''}`) : 'Nu',
+        (() => { const cs = guestCompanions(g); return cs.length > 0 ? pdfSafe(`+${cs.length}: ${cs.map(c => `${c.name || '?'} (${c.portion === 'full' ? 'adult' : c.portion === 'half' ? 'copil' : 'fara meniu'})`).join(', ')}`) : 'Nu' })(),
       ]
       if (tableInfo) {
         if (!byTable[tableInfo.id]) byTable[tableInfo.id] = { name: tableInfo.name, rows: [] }
@@ -780,9 +791,17 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
                     <td className="px-4 py-3">
                       <p className="font-medium">{guest.name}</p>
                       {guest.email && <p className="text-xs text-muted-foreground">{guest.email}</p>}
-                      {Array.from({ length: guest.companions_count ?? (guest.has_plus_one ? 1 : 0) }).map((_, i) => (
-                        <p key={i} className="text-xs text-rose-400 mt-0.5">
-                          ↳ {i === 0 && guest.plus_one_name ? guest.plus_one_name : `Însoțitor ${i + 1}`}
+                      {guestCompanions(guest).map((c, i) => (
+                        <p key={i} className="text-xs mt-0.5 flex items-center gap-1.5 flex-wrap">
+                          <span className="text-rose-400">↳</span>
+                          <span className="text-gray-700 font-medium">{c.name || `Însoțitor ${i + 1}`}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                            c.portion === 'full' ? 'bg-green-50 text-green-600'
+                            : c.portion === 'half' ? 'bg-orange-50 text-orange-500'
+                            : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            {c.portion === 'full' ? 'adult' : c.portion === 'half' ? 'copil ½' : 'fără meniu'}
+                          </span>
                         </p>
                       ))}
                     </td>
@@ -864,46 +883,51 @@ export default function GuestList({ eventId, userId, initialGuests, tables, canE
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2 space-y-1">
-                <Label>Însoțitori (0 = nimeni, 1 = soț/soție, 2+ = cu copii etc.)</Label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, companions_count: Math.max(0, f.companions_count - 1) }))}
-                    className="w-8 h-8 rounded-lg border border-input flex items-center justify-center font-bold text-gray-600 hover:bg-stone-100 transition-colors"
-                  >−</button>
-                  <span className="w-8 text-center text-sm font-semibold">{form.companions_count}</span>
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, companions_count: Math.min(10, f.companions_count + 1) }))}
-                    className="w-8 h-8 rounded-lg border border-input flex items-center justify-center font-bold text-gray-600 hover:bg-stone-100 transition-colors"
-                  >+</button>
-                  <span className="text-xs text-gray-400 ml-1">
-                    {form.companions_count === 0 ? 'Singur/ă' : form.companions_count === 1 ? '+ 1 persoană' : `+ ${form.companions_count} persoane`}
-                  </span>
+              <div className="col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Însoțitori{form.companions.length > 0 ? ` (${form.companions.length})` : ''}</Label>
+                  {form.companions.length < 10 && (
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, companions: [...f.companions, { name: '', portion: 'full' as const }] }))}
+                      className="text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors"
+                    >+ Adaugă însoțitor</button>
+                  )}
+                </div>
+                {form.companions.length === 0 && (
+                  <p className="text-xs text-gray-400 py-0.5">Vine singur/ă — apasă + Adaugă dacă vine cu cineva</p>
+                )}
+                <div className="space-y-2">
+                  {form.companions.map((c, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input
+                        value={c.name}
+                        onChange={e => { const v = e.target.value; setForm(f => ({ ...f, companions: f.companions.map((x, j) => j === i ? { ...x, name: v } : x) })) }}
+                        placeholder={`Însoțitor ${i + 1} — nume`}
+                        className="flex-1 h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200 transition-colors"
+                      />
+                      <Select
+                        value={c.portion}
+                        onValueChange={v => v && setForm(f => ({ ...f, companions: f.companions.map((x, j) => j === i ? { ...x, portion: v as 'full' | 'half' | 'none' } : x) }))}
+                      >
+                        <SelectTrigger className="w-36 h-8 text-xs shrink-0">
+                          <SelectValue>{c.portion === 'full' ? 'Adult' : c.portion === 'half' ? 'Copil (½)' : 'Fără meniu'}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="full">Porție adult</SelectItem>
+                          <SelectItem value="half">Porție copil (½)</SelectItem>
+                          <SelectItem value="none">Fără meniu</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, companions: f.companions.filter((_, j) => j !== i) }))}
+                        className="w-8 h-8 shrink-0 rounded-lg border border-stone-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"
+                      >×</button>
+                    </div>
+                  ))}
                 </div>
               </div>
-              {form.companions_count > 0 && (
-                <>
-                  <div className="col-span-2 space-y-1">
-                    <Label>Numele primului însoțitor {form.companions_count > 1 ? '(opțional)' : ''}</Label>
-                    <input ref={plusOneNameRef} defaultValue={form.plus_one_name} placeholder="Maria Popescu" className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200 transition-colors" />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label>Porție însoțitor principal</Label>
-                    <Select value={form.plus_one_portion} onValueChange={(v) => v && setForm({ ...form, plus_one_portion: v as 'full' | 'half' | 'none' })}>
-                      <SelectTrigger>
-                        <SelectValue>{PORTION_LABELS[form.plus_one_portion]}</SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="full">Porție întreagă (adult)</SelectItem>
-                        <SelectItem value="half">Porție copil (½)</SelectItem>
-                        <SelectItem value="none">Copil fără meniu</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
               <div className="space-y-1">
                 <Label>Preferințe alimentare</Label>
                 <input ref={dietaryRef} defaultValue={form.dietary} placeholder="Vegetarian, alergii..." className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200 transition-colors" />
