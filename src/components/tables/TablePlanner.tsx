@@ -839,25 +839,8 @@ export default function TablePlanner({
                 transformOrigin: 'top left',
                 transform: `scale(${zoom})`,
                 backgroundColor: 'transparent',
-                backgroundImage: FLOOR_BG,
-                backgroundSize: '80px 80px',
-                boxShadow: 'inset 0 0 120px rgba(0,0,0,0.5)',
               }}
             >
-              {/* Hall walls outline */}
-              <div style={{
-                position: 'absolute',
-                top: 48, left: 48,
-                width: CANVAS_W - 96, height: CANVAS_H - 96,
-                border: '6px solid rgba(200,160,48,0.25)',
-                borderRadius: 8,
-                pointerEvents: 'none',
-                zIndex: 1,
-                boxShadow: [
-                  'inset 0 0 0 3px rgba(200,160,48,0.1)',
-                  '0 0 0 48px rgba(0,0,0,0.15)',
-                ].join(', '),
-              }} />
 
               {/* Venue elements */}
               {venueElements.map(el => {
