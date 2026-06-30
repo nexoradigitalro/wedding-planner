@@ -99,7 +99,10 @@ export default function TablePlanner({
   const [editName, setEditName] = useState('')
   const [editCapacity, setEditCapacity] = useState('8')
 
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoom] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1
+    return parseFloat(localStorage.getItem(`canvas_zoom_${eventId}`) ?? '1')
+  })
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [highlightCategory, setHighlightCategory] = useState<string | null>(null)
@@ -116,6 +119,10 @@ export default function TablePlanner({
   useEffect(() => {
     localStorage.setItem(`table_scales_${eventId}`, JSON.stringify(tableScales))
   }, [tableScales, eventId])
+
+  useEffect(() => {
+    localStorage.setItem(`canvas_zoom_${eventId}`, String(zoom))
+  }, [zoom, eventId])
 
   useEffect(() => {
     localStorage.setItem(`locked_tables_${eventId}`, JSON.stringify([...lockedTables]))
