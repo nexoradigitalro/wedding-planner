@@ -24,14 +24,21 @@ const CANVAS_H = 1800
 const FLOOR_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%230e0c0a'/%3E%3Crect x='0' y='0' width='40' height='40' fill='%23121009'/%3E%3Cline x1='0' y1='14' x2='40' y2='14' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='0' y1='27' x2='40' y2='27' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Crect x='40' y='0' width='40' height='40' fill='%230b0908'/%3E%3Cline x1='54' y1='0' x2='54' y2='40' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='67' y1='0' x2='67' y2='40' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Crect x='0' y='40' width='40' height='40' fill='%230b0908'/%3E%3Cline x1='14' y1='40' x2='14' y2='80' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='27' y1='40' x2='27' y2='80' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Crect x='40' y='40' width='40' height='40' fill='%23121009'/%3E%3Cline x1='40' y1='54' x2='80' y2='54' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='40' y1='67' x2='80' y2='67' stroke='%23c8a030' stroke-width='.3' opacity='.18'/%3E%3Cline x1='40' y1='0' x2='40' y2='80' stroke='%23c8a030' stroke-width='.6' opacity='.22'/%3E%3Cline x1='0' y1='40' x2='80' y2='40' stroke='%23c8a030' stroke-width='.6' opacity='.22'/%3E%3C/svg%3E")`
 
 const ELEMENT_DEFS: Record<string, { label: string; emoji: string; w: number; h: number; bg: string; border: string }> = {
-  dance_floor: { label: 'Ring de dans',  emoji: '💃', w: 220, h: 160, bg: '#fef9c3', border: '#fde047' },
-  candy_bar:   { label: 'Candy Bar',     emoji: '🍬', w: 130, h: 95,  bg: '#fce7f3', border: '#f9a8d4' },
-  photo_booth: { label: 'Photo Booth',   emoji: '📸', w: 120, h: 90,  bg: '#f0fdf4', border: '#86efac' },
-  photo_360:   { label: '360° Photo',    emoji: '🎥', w: 130, h: 100, bg: '#eff6ff', border: '#93c5fd' },
-  dj_booth:    { label: 'DJ',            emoji: '🎧', w: 140, h: 85,  bg: '#f5f3ff', border: '#c4b5fd' },
-  bar:         { label: 'Bar',           emoji: '🍹', w: 170, h: 75,  bg: '#fff7ed', border: '#fdba74' },
-  live_band:   { label: 'Trupă live',    emoji: '🎵', w: 200, h: 120, bg: '#f0fdf4', border: '#6ee7b7' },
-  entrance:    { label: 'Intrare',       emoji: '🚪', w: 90,  h: 55,  bg: '#f8fafc', border: '#cbd5e1' },
+  dance_floor:       { label: 'Ring de dans',       emoji: '💃', w: 220, h: 160, bg: '#fef9c3', border: '#fde047' },
+  dj_booth:          { label: 'DJ',                 emoji: '🎧', w: 140, h: 85,  bg: '#f5f3ff', border: '#c4b5fd' },
+  live_band:         { label: 'Trupă live',          emoji: '🎵', w: 200, h: 120, bg: '#f0fdf4', border: '#6ee7b7' },
+  stage:             { label: 'Scenă',              emoji: '🎤', w: 240, h: 100, bg: '#fdf4ff', border: '#e879f9' },
+  bar:               { label: 'Bar',                emoji: '🍹', w: 170, h: 75,  bg: '#fff7ed', border: '#fdba74' },
+  buffet_traditional:{ label: 'Bufet tradițional',  emoji: '🥘', w: 200, h: 80,  bg: '#fef3c7', border: '#f59e0b' },
+  buffet_int:        { label: 'Bufet internațional', emoji: '🍽️', w: 200, h: 80,  bg: '#ecfdf5', border: '#34d399' },
+  dessert_table:     { label: 'Masă deserturi',     emoji: '🎂', w: 160, h: 75,  bg: '#fdf2f8', border: '#f0abfc' },
+  candy_bar:         { label: 'Candy Bar',          emoji: '🍬', w: 130, h: 95,  bg: '#fce7f3', border: '#f9a8d4' },
+  photo_booth:       { label: 'Photo Booth',        emoji: '📸', w: 120, h: 90,  bg: '#f0fdf4', border: '#86efac' },
+  photo_360:         { label: '360° Photo',         emoji: '🎥', w: 130, h: 100, bg: '#eff6ff', border: '#93c5fd' },
+  projector:         { label: 'Proiector/Ecran',    emoji: '📽️', w: 160, h: 60,  bg: '#1e1b4b', border: '#6366f1' },
+  gift_table:        { label: 'Masă cadouri',       emoji: '🎁', w: 150, h: 70,  bg: '#fff1f2', border: '#fb7185' },
+  entrance:          { label: 'Intrare',            emoji: '🚪', w: 90,  h: 55,  bg: '#f8fafc', border: '#cbd5e1' },
+  parking:           { label: 'Parcare',            emoji: '🅿️', w: 110, h: 70,  bg: '#f0f9ff', border: '#7dd3fc' },
 }
 
 interface TablePos { x: number; y: number }
@@ -576,7 +583,6 @@ export default function TablePlanner({
       created_at: new Date().toISOString(),
     }
     setVenueElements(prev => [...prev, newEl])
-    setAddElementOpen(false)
 
     // Persist to DB in background — if table doesn't exist yet, silently ignored
     supabase.from('venue_elements').insert({
@@ -1068,20 +1074,28 @@ export default function TablePlanner({
 
       {/* Add venue element dialog */}
       <Dialog open={addElementOpen} onOpenChange={setAddElementOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Adaugă element în sală</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground -mt-1">Elementele pot fi mutate liber pe planșă.</p>
-          <div className="grid grid-cols-4 gap-3 mt-2">
-            {Object.entries(ELEMENT_DEFS).map(([type, def]) => (
-              <button
-                key={type}
-                onClick={() => handleAddElement(type)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-stone-200 hover:border-rose-300 hover:bg-rose-50 transition-colors"
-              >
-                <span style={{ fontSize: 26 }}>{def.emoji}</span>
-                <span className="text-[10px] font-semibold text-slate-700 text-center leading-tight">{def.label}</span>
-              </button>
-            ))}
+          <p className="text-sm text-muted-foreground -mt-1">Click pentru a adăuga — poți adăuga același element de mai multe ori.</p>
+          <div className="grid grid-cols-4 gap-2.5 mt-2">
+            {Object.entries(ELEMENT_DEFS).map(([type, def]) => {
+              const count = venueElements.filter(el => el.type === type).length
+              return (
+                <button
+                  key={type}
+                  onClick={() => handleAddElement(type)}
+                  className="relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-stone-200 hover:border-rose-300 hover:bg-rose-50 transition-colors"
+                >
+                  {count > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {count}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 24 }}>{def.emoji}</span>
+                  <span className="text-[10px] font-semibold text-slate-700 text-center leading-tight">{def.label}</span>
+                </button>
+              )
+            })}
           </div>
         </DialogContent>
       </Dialog>
