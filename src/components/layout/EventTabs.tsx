@@ -21,6 +21,7 @@ export default function EventTabs({ eventId, role, planTier }: Props) {
     { label: 'Wedding Planner To-Do', href: `/events/${eventId}/todos` },
     { label: '💰 Costuri', href: `/events/${eventId}/costuri` },
     { label: '🎁 Cinste', href: `/events/${eventId}/cinste` },
+    { label: '📋 Program Zi', href: `/events/${eventId}/program` },
     ...(role === 'owner' ? [{ label: 'Setări', href: `/events/${eventId}/settings` }] : []),
   ]
 

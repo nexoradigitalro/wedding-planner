@@ -146,5 +146,19 @@ export interface InviteLink {
   created_at: string
 }
 
+export interface WeddingProgramItem {
+  id: string
+  event_id: string
+  location: string | null
+  moment: string
+  start_time: string | null
+  end_time: string | null
+  responsible: string | null
+  details: string | null
+  important_notes: string | null
+  order_index: number
+  created_at: string
+}
+
 export type EventWithMembers = Event & { members: EventMember[] }
 export type TableWithGuests = Table & { guests: Guest[] }
