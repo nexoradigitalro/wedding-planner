@@ -140,7 +140,7 @@ export default function DayProgram({ eventId, eventName, eventDate, initialItems
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(10)
         doc.setTextColor(225, 29, 72)
-        const time = [item.start_time, item.end_time].filter(Boolean).join(' - ')
+        const time = [item.start_time, item.end_time].filter(Boolean).map(t => t!.slice(0, 5)).join(' - ')
         if (time) doc.text(time, margin + 2, y + 1)
 
         doc.setTextColor(30, 30, 30)
@@ -225,21 +225,33 @@ export default function DayProgram({ eventId, eventName, eventDate, initialItems
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Oră start</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Oră start (00:00 – 23:59)</label>
               <input
-                type="time"
+                type="text"
+                placeholder="14:30"
+                maxLength={5}
                 value={form.start_time}
-                onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-rose-400"
+                onChange={e => {
+                  const raw = e.target.value.replace(/\D/g, '').slice(0, 4)
+                  const v = raw.length > 2 ? raw.slice(0, 2) + ':' + raw.slice(2) : raw
+                  setForm(f => ({ ...f, start_time: v }))
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-rose-400 font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Oră final</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Oră final (00:00 – 23:59)</label>
               <input
-                type="time"
+                type="text"
+                placeholder="16:00"
+                maxLength={5}
                 value={form.end_time}
-                onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-rose-400"
+                onChange={e => {
+                  const raw = e.target.value.replace(/\D/g, '').slice(0, 4)
+                  const v = raw.length > 2 ? raw.slice(0, 2) + ':' + raw.slice(2) : raw
+                  setForm(f => ({ ...f, end_time: v }))
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-rose-400 font-mono"
               />
             </div>
             <div>
@@ -324,11 +336,11 @@ export default function DayProgram({ eventId, eventName, eventDate, initialItems
               <div className="w-24 shrink-0 text-right pt-3">
                 {item.start_time && (
                   <span className="text-sm font-semibold text-rose-600 font-mono">
-                    {item.start_time}
+                    {item.start_time.slice(0, 5)}
                   </span>
                 )}
                 {item.end_time && (
-                  <span className="block text-xs text-gray-400 font-mono">{item.end_time}</span>
+                  <span className="block text-xs text-gray-400 font-mono">{item.end_time.slice(0, 5)}</span>
                 )}
               </div>
 
