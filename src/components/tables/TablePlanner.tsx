@@ -505,25 +505,37 @@ export default function TablePlanner({
     const guest = findGuest(guestId)
     if (!guest) return
     const targetTableId = targetId === 'unassigned' ? null : targetId
-    if (guest.table_id === targetTableId) return
+    const originalTableId = guest.table_id
+    if (originalTableId === targetTableId) return
     const targetTable = targetTableId ? tables.find(t => t.id === targetTableId) : null
     if (targetTable) {
       const occ = targetTable.guests.reduce((s, g) => s + 1 + (g.companions?.length ?? g.companions_count ?? (g.has_plus_one ? 1 : 0)), 0)
       const seats = 1 + (guest.companions?.length ?? guest.companions_count ?? (guest.has_plus_one ? 1 : 0))
       if (occ + seats > targetTable.capacity) return
     }
-    setTables(prev => prev.map(t => {
-      if (t.id === guest.table_id) return { ...t, guests: t.guests.filter(g => g.id !== guestId) }
-      if (t.id === targetTableId) return { ...t, guests: [...t.guests, { ...guest, table_id: targetTableId }] }
-      return t
-    }))
-    if (targetTableId === null) {
-      setUnassigned(prev => [...prev, { ...guest, table_id: null }])
-    } else {
-      setUnassigned(prev => prev.filter(g => g.id !== guestId))
+
+    function applyMove(fromId: string | null, toId: string | null) {
+      setTables(prev => prev.map(t => {
+        if (t.id === fromId) return { ...t, guests: t.guests.filter(g => g.id !== guestId) }
+        if (t.id === toId) return { ...t, guests: [...t.guests, { ...guest!, table_id: toId }] }
+        return t
+      }))
+      if (toId === null) {
+        setUnassigned(prev => [...prev, { ...guest!, table_id: null }])
+      } else {
+        setUnassigned(prev => prev.filter(g => g.id !== guestId))
+      }
     }
-    await supabase.from('guests').update({ table_id: targetTableId }).eq('id', guestId)
-    const fromTable = guest.table_id ? tables.find(t => t.id === guest.table_id) : null
+
+    applyMove(originalTableId, targetTableId)
+    const { error } = await supabase.from('guests').update({ table_id: targetTableId }).eq('id', guestId)
+    if (error) {
+      applyMove(targetTableId, originalTableId)
+      const { toast } = await import('sonner')
+      toast.error('Nu am putut muta invitatul — încearcă din nou.')
+      return
+    }
+    const fromTable = originalTableId ? tables.find(t => t.id === originalTableId) : null
     await supabase.from('activity_log').insert({
       event_id: eventId, user_id: userId, action: 'guest_moved',
       payload: { guest_name: guest.name, from_table: fromTable?.name ?? null, to_table: targetTable?.name ?? null },
